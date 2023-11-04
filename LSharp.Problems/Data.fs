@@ -11,6 +11,7 @@ module Data =
     let [<Literal>] databaseName = "LsharpData"
     let [<Literal>] categoriesName = "categories" 
     let [<Literal>] tasksName = "tasks" 
+    let [<Literal>] solutionsName = "solutions" 
 
     [<CLIMutable>]
     type Category = {
@@ -32,6 +33,32 @@ module Data =
         file: string;
     }
 
+
+    [<CLIMutable>]
+    type SolutionItem = {
+        datetime: string;
+        code: string;
+        isValid: bool;
+    }
+
+    [<CLIMutable>]
+    type SolutionComment = {
+        user: string;
+        datetime: string;
+        text: string;
+    }
+
+    [<CLIMutable>]
+    type Solution = {
+        _id: ObjectId;
+        user: string;
+        getExp: bool;
+        published: bool;
+        solutions: SolutionItem array;
+        comments: SolutionComment array;
+        likes: string array;
+    }
+
     let categories = 
         connectionString 
         |> client 
@@ -44,22 +71,20 @@ module Data =
          |> database databaseName
          |> collection<LsharpTask> tasksName
 
-    let tryParseOid id = 
-        let result = ObjectId.TryParse(id)
-        match result with
-        | (false, _) -> None
-        | (true, objId) -> Some objId 
+    let solutions = 
+        connectionString 
+         |> client 
+         |> database databaseName
+         |> collection<LsharpTask> solutionsName
+
+
     
 
     // CATEGORIES
 
     let getCategoryById (id: string) = task {
-        match tryParseOid id with
-        | None -> return None
-        | Some id -> 
-            return! categories
-                |> find {| _id = oid id |}
-                |> oneAsync
+        return! categories
+        |> findByIdAsync id
     }
 
     let getAllCategories () = task {
@@ -74,24 +99,19 @@ module Data =
     }
 
     let updateCategory id update = task {
-        match tryParseOid id with
-        | None -> return Error "Invalid id"
-        | Some id -> 
-            return! categories
-            |> updateOneAsync 
-                {| ``_id`` = oid id |}
-                {| ``$set`` = update |}
+        return! categories |>
+        updateByIdAsync id {| ``$set`` = update |}
     }
 
     let updateCategoryImage filename id = task {
-        match tryParseOid id with
-        | None -> return Error "Invalid id"
-        | Some id -> 
-            return! categories
-            |> updateOneAsync 
-                {| ``_id`` = oid id |}
-                (setFields {| image = filename |})
+        return! categories |>
+        updateByIdAsync id (setFields {| image = filename |})
     } 
+
+    let deleteCategory id = task {
+        return! categories |>
+        deleteByIdAsync id 
+    }
 
     // TASKS
 
@@ -110,20 +130,15 @@ module Data =
 
 
     let getTaskById (id: string) = task {
-        match tryParseOid id with
-        | None -> return None
-        | Some id -> 
-            return! tasks
-                |> find {| _id = oid id |}
-                |> oneAsync
+        return! tasks 
+        |> findByIdAsync id
     }
 
 
-    let insertTask lsharpTask = task {
-        let! category =  
-            tasks 
-            |> find {| _id = oid lsharpTask.category |}
-            |> oneAsync
+    let insertTask (lsharpTask: LsharpTask) = task {
+        let! category = 
+            categories 
+            |> findByIdAsync lsharpTask.category
 
         match category with
         | None -> return Error "Invalid category"
@@ -135,33 +150,30 @@ module Data =
                 | _ -> return Error "Error while adding the task"
     }
 
+
     let updateTask lsharpTask id = task {
-        match tryParseOid id with
-        | None -> return Error "Invalid id"
-        | Some id -> 
-            return! tasks 
-            |> updateOneAsync 
-                {| _id = oid id |}
-                (setFields lsharpTask)
+        return! tasks |> 
+        updateByIdAsync id (setFields lsharpTask)
     }
+
 
     let updateTaskFile filename id = task {
-        match tryParseOid id with
-        | None -> return Error "Invalid id"
-        | Some id -> 
-            return! tasks 
-            |> updateOneAsync 
-                {| _id = oid id |}
-                (setFields {| file = filename |})
+        return! tasks |>
+        updateByIdAsync id (setFields {| file = filename |})
     }
 
+
     let updateTaskImage filename id = task {
-        match tryParseOid id with
-        | None -> return Error "Invalid id"
-        | Some id -> 
-            return! tasks 
-            |> updateOneAsync 
-                {| _id = oid id |}
-                (setFields {| image = filename |})
+        return! tasks |>
+        updateByIdAsync id (setFields {| image = filename |})
     }
+
+
+    let deleteTask id = task {
+        return! tasks |>
+        deleteByIdAsync id 
+    }
+
+
+    // SOLUTIONS
 

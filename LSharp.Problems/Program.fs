@@ -250,6 +250,15 @@ let updateTaskImageHandler =
     }
 
 
+let deleteTaskHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let maybeId = ctx.TryGetQueryStringValue("id")
+        match maybeId with
+        | None -> return! badRequest "Invalid id" next ctx
+        | Some id -> return! deleteTask id |> responseFromResult next ctx
+    }
+
+
 let webApp = choose [
     route "/categories" >=> GET >=> authorize >=> getCategoriesHandler
     route "/category" >=> choose [
@@ -263,6 +272,7 @@ let webApp = choose [
         POST >=> authorize >=> isAdmin >=> addTaskHandler
         GET >=> authorize >=> getTaskHandler
         PUT >=> authorize >=> isAdmin >=> updateTaskHandler
+        DELETE >=> authorize >=> isAdmin >=> deleteTaskHandler
     ]
     route "/task/file" >=> PUT >=> authorize >=> isAdmin >=> updateTaskFileHandler
     route "/task/image" >=> PUT >=> authorize >=> isAdmin >=> updateTaskImageHandler

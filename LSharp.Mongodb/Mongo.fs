@@ -2,6 +2,7 @@
 open MongoDB
 open MongoDB.Bson
 open MongoDB.Driver
+open BuildHelpers
 
 module Mongo = 
     open System
@@ -35,6 +36,12 @@ module Mongo =
     let serializeUpdate update : UpdateDefinition<'a> = 
         JsonSerializer.Serialize(update) 
         |> UpdateDefinition<'a>.op_Implicit
+
+    let tryParseOid id = 
+        let result = ObjectId.TryParse(id)
+        match result with
+        | (false, _) -> None
+        | (true, objId) -> Some objId 
 
 
     let find filter (collection: IMongoCollection<'a>) = 
@@ -81,6 +88,16 @@ module Mongo =
     let toListAsync (found: IFindFluent<'a, 'a>) = task {
         return! found.ToListAsync()
     }
+
+
+    let findByIdAsync id (collection: IMongoCollection<'a>) = task {
+        match tryParseOid id with
+        | None -> return None
+        | Some id -> 
+            return! collection
+            |> find {| _id = oid id |}
+            |> oneAsync
+    }
     
 
     let insertOne (document: 'a) (collection: IMongoCollection<'a>) = 
@@ -124,6 +141,30 @@ module Mongo =
     }
 
 
+    let updateByIdAsync 
+        id 
+        update 
+        (collection: IMongoCollection<'a>) = task {
+            let updateResult = 
+                match tryParseOid id with
+                | None -> Error "Invalid Id"
+                | Some id -> 
+                    Ok (collection.UpdateOneAsync(
+                        {| _id = oid id |} |> serializeFilter, 
+                        update |> serializeUpdate
+                    ))
+            match updateResult with
+            | Ok result -> 
+                let! r = result
+                if r.IsAcknowledged then 
+                    return Ok "Success"
+                else
+                    return Error "Error while update"
+            | Error err -> return Error err
+
+        }
+
+
     let updateMany 
         (filter: FilterDefinition<'a>) 
         (update: UpdateDefinition<'a>) 
@@ -165,6 +206,28 @@ module Mongo =
             | result when result.IsAcknowledged -> Ok "Deleted"
             | _ -> Error "Error while deleting"
 
+    let deleteOneAsync
+        filter
+        (collection: IMongoCollection<'a>) = task {
+            let! result = 
+                collection.DeleteOneAsync(filter |> serializeFilter)
+            match result with
+            | result when result.DeletedCount > 0 -> return Ok "Deleted"
+            | result when result.IsAcknowledged -> return Error "Nothing to delete"
+            | _ -> return Error "Error while deleting"
+    }   
+
+
+    let deleteByIdAsync
+        id
+        (collection: IMongoCollection<'a>) = task {
+            match tryParseOid id with
+            | None -> return Error "Invalid Id"
+            | Some id -> 
+                return! collection
+                |> deleteOneAsync {| _id = oid id |}
+    }
+
 
     let deleteMany 
         (filter: FilterDefinition<'a>) 
@@ -174,4 +237,6 @@ module Mongo =
             match result with
             | result when result.IsAcknowledged -> Ok "Deleted"
             | _ -> Error "Error while deleting"
+
+
 

@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Mongo.fs" />
     <Compile Include="BuildHelpers.fs" />
+    <Compile Include="Mongo.fs" />
   </ItemGroup>
 
   <ItemGroup>
