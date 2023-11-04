@@ -5,8 +5,6 @@ open MongoDB.Driver
 open BuildHelpers
 
 module Mongo = 
-    open System
-    open MongoDB.Driver.Linq
     open System.Text.Json
     
 

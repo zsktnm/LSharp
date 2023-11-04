@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -7,6 +7,10 @@
   <ItemGroup>
     <Compile Include="Data.fs" />
     <Compile Include="DataTransfer.fs" />
+    <Compile Include="Handlers.Common.fs" />
+    <Compile Include="Handlers.Categories.fs" />
+    <Compile Include="Handlers.Solutions.fs" />
+    <Compile Include="Handlers.Tasks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -23,7 +27,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Handlers.Categories.fs" />
+    <Compile Include="Handlers.Common.fs" />
+    <Compile Include="Handlers.Tasks.fs" />
+    <Compile Include="Handlers.Solutions.fs" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
+
+  <ItemGroup />
 
 </Project>
