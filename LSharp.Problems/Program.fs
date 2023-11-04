@@ -298,8 +298,9 @@ let getSolutionHandler =
             return! badRequest "Invalid id" next ctx
         | Some solutionId -> 
             match! getSolutionById solutionId with
-            | None -> return! notFound "Not found" next ctx
-            | Some s -> return! ok (s |> toSolutionView userId) next ctx
+            | Some s when s.published || s.user = userId ->
+                return! ok (s |> toSolutionView userId) next ctx
+            | _ -> return! notFound "Not found" next ctx
     }
 
 
@@ -313,8 +314,18 @@ let getSolutionsByTaskHandler =
         | Some taskId -> 
             let! solutions = getSolutionsByTask taskId 
             return! ok 
-                    (solutions |> Seq.map (fun s -> toSolutionView userId s))
+                    (solutions 
+                    |> Seq.map (fun s -> toSolutionView userId s)
+                    |> Seq.where (fun s -> s.published)
+                    )
                     next ctx
+    }
+
+
+let getUserSolutionsHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let! solutions = getUserId ctx |> getSolutionsByUser
+        return! ok solutions next ctx
     }
 
 
@@ -364,6 +375,7 @@ let webApp = choose [
     route "/solutions/solve" >=> POST >=> authorize >=> solveHandler
     route "/solutions/find" >=> GET >=> authorize >=> getSolutionHandler
     route "/solutions/get" >=> GET >=> authorize >=> getSolutionsByTaskHandler
+    route "/solutions/getByUser" >=> GET >=> authorize >=> getUserSolutionsHandler
     route "/solutions/like" >=> GET >=> authorize >=> likeSolutionHandler
     route "/solutions/comment" >=> choose [
         POST >=> authorize >=> postCommentHandler

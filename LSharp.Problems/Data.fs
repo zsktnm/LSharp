@@ -294,8 +294,15 @@ module Data =
 
     let getSolutionsByTask taskId = 
         solutions
-        |> find {| task = taskId |}
+        |> find {| task = taskId; |}
         |> toListAsync
+
+
+    let getSolutionsByUser userId = 
+        solutions
+        |> find {| user = userId; |}
+        |> toListAsync
+
 
     let commentSolution userId solutionId text = 
         let postComment userId (solution: Solution) text = 
