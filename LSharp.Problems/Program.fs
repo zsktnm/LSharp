@@ -59,6 +59,10 @@ let responseFromResult next ctx result = task {
 }
 
 
+let getUserId (ctx: HttpContext) = 
+    ctx.User.FindFirst(ClaimTypes.NameIdentifier).Value
+
+
 let findCategoryResult id next ctx = task {
     match! getCategoryById id with
     | None -> 
@@ -250,12 +254,93 @@ let updateTaskImageHandler =
     }
 
 
+let solveHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let userId = getUserId ctx
+        let code = readDto<CodeDTO> ctx
+        match! code with
+        | Error validationErrors -> 
+            return! badRequest validationErrors next ctx
+        | Ok code -> 
+            return! (userId, code.taskId, code.code)
+            |||> solve 
+            |> responseFromResult next ctx
+    }
+
+
 let deleteTaskHandler = 
     fun (next: HttpFunc) (ctx: HttpContext) -> task {
         let maybeId = ctx.TryGetQueryStringValue("id")
         match maybeId with
         | None -> return! badRequest "Invalid id" next ctx
         | Some id -> return! deleteTask id |> responseFromResult next ctx
+    }
+
+
+let likeSolutionHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let maybeId = ctx.TryGetQueryStringValue("id")
+        let userId = getUserId ctx
+        match maybeId with
+        | None -> return! badRequest "Invalid id" next ctx
+        | Some solutionId -> 
+            return! like userId solutionId 
+            |> responseFromResult next ctx
+    }
+
+
+let getSolutionHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let userId = getUserId ctx
+        let maybeId = ctx.TryGetQueryStringValue("id")
+        match maybeId with
+        | None -> 
+            return! badRequest "Invalid id" next ctx
+        | Some solutionId -> 
+            match! getSolutionById solutionId with
+            | None -> return! notFound "Not found" next ctx
+            | Some s -> return! ok (s |> toSolutionView userId) next ctx
+    }
+
+
+let getSolutionsByTaskHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let userId = getUserId ctx
+        let maybeId = ctx.TryGetQueryStringValue("id")
+        match maybeId with
+        | None -> 
+            return! badRequest "Invalid id" next ctx
+        | Some taskId -> 
+            let! solutions = getSolutionsByTask taskId 
+            return! ok 
+                    (solutions |> Seq.map (fun s -> toSolutionView userId s))
+                    next ctx
+    }
+
+
+let postCommentHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let userId = getUserId ctx
+        let comment = readDto<PostCommentDTO> ctx
+        match! comment with
+        | Error msgs -> 
+            return! badRequest msgs next ctx
+        | Ok comment -> 
+            return! commentSolution userId comment.solution comment.text
+            |> responseFromResult next ctx
+    }
+
+
+let deleteCommentHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let userId = getUserId ctx
+        let commentData = readDto<RemoveDTO> ctx
+        match! commentData with
+        | Error msgs -> 
+            return! badRequest msgs next ctx
+        | Ok data -> 
+            return! deleteComment userId data.solution data.comment
+            |> responseFromResult next ctx
     }
 
 
@@ -276,6 +361,14 @@ let webApp = choose [
     ]
     route "/task/file" >=> PUT >=> authorize >=> isAdmin >=> updateTaskFileHandler
     route "/task/image" >=> PUT >=> authorize >=> isAdmin >=> updateTaskImageHandler
+    route "/solutions/solve" >=> POST >=> authorize >=> solveHandler
+    route "/solutions/find" >=> GET >=> authorize >=> getSolutionHandler
+    route "/solutions/get" >=> GET >=> authorize >=> getSolutionsByTaskHandler
+    route "/solutions/like" >=> GET >=> authorize >=> likeSolutionHandler
+    route "/solutions/comment" >=> choose [
+        POST >=> authorize >=> postCommentHandler
+        DELETE >=> authorize >=> deleteCommentHandler
+    ]
     RequestErrors.NOT_FOUND "Not found"
 ]
 
@@ -310,6 +403,9 @@ let main args =
     builder.Services
         .AddScoped<AbstractValidator<CategoryDTO>, CategoryValidator>()
         .AddScoped<AbstractValidator<TaskDTO>, TaskValidator>()
+        .AddScoped<AbstractValidator<CodeDTO>, CodeValidator>()
+        .AddScoped<AbstractValidator<PostCommentDTO>, PostCommentValidator>()
+        .AddScoped<AbstractValidator<RemoveDTO>, RemoveCommentValidator>()
         |> ignore
         
     let app = builder.Build()

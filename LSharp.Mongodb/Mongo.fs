@@ -122,7 +122,8 @@ module Mongo =
                     update |> serializeUpdate
                 )
             match result with
-            | result when result.IsAcknowledged -> Ok "Updated"
+            | result when result.IsAcknowledged && result.ModifiedCount > 0 -> 
+                Ok $"Acknowledged. Modified: {result.ModifiedCount} Matched: {result.MatchedCount}"
             | _ -> Error "Error while updating"
 
 
@@ -136,7 +137,8 @@ module Mongo =
                     update |> serializeUpdate
                 )
             match result with
-            | result when result.IsAcknowledged -> return Ok "Updated"
+            | result when result.IsAcknowledged && result.ModifiedCount > 0 -> 
+                return Ok $"Acknowledged. Modified: {result.ModifiedCount} Matched: {result.MatchedCount}"
             | _ -> return Error "Error while updating"
     }
 
@@ -156,8 +158,8 @@ module Mongo =
             match updateResult with
             | Ok result -> 
                 let! r = result
-                if r.IsAcknowledged then 
-                    return Ok "Success"
+                if r.IsAcknowledged && r.ModifiedCount > 0 then 
+                    return Ok $"Acknowledged. Modified: {r.ModifiedCount} Matched: {r.MatchedCount}"
                 else
                     return Error "Error while update"
             | Error err -> return Error err
@@ -172,7 +174,7 @@ module Mongo =
             let result = 
                 collection.UpdateMany(filter |> serializeFilter, update)
             match result with
-            | result when result.IsAcknowledged -> Ok "Updated"
+            | result when result.IsAcknowledged -> Ok $"Acknowledged. Modified: {result.ModifiedCount} Matched: {result.MatchedCount}"
             | _ -> Error "Error while updating"
 
 
@@ -183,7 +185,8 @@ module Mongo =
             let result = 
                 collection.ReplaceOne(filter |> serializeFilter, document)
             match result with
-            | result when result.IsAcknowledged -> Ok "Updated"
+            | result when result.IsAcknowledged && result.ModifiedCount > 0 -> 
+                Ok "Updated"
             | _ -> Error "Error while updating"
 
     let replaceOneAsync
@@ -193,7 +196,8 @@ module Mongo =
             let result = 
                 collection.ReplaceOneAsync(filter |> serializeFilter, document)
             match! result with
-            | result when result.IsAcknowledged -> return Ok "Updated"
+            | result when result.IsAcknowledged && result.ModifiedCount > 0 -> 
+                return Ok "Updated"
             | _ -> return Error "Error while updating"
     }
 
@@ -203,7 +207,8 @@ module Mongo =
             let result = 
                 collection.DeleteOne(filter |> serializeFilter)
             match result with
-            | result when result.IsAcknowledged -> Ok "Deleted"
+            | result when result.IsAcknowledged && result.DeletedCount > 0 -> 
+                Ok "Deleted"
             | _ -> Error "Error while deleting"
 
     let deleteOneAsync
@@ -212,7 +217,8 @@ module Mongo =
             let! result = 
                 collection.DeleteOneAsync(filter |> serializeFilter)
             match result with
-            | result when result.DeletedCount > 0 -> return Ok "Deleted"
+            | result when result.IsAcknowledged && result.DeletedCount > 0 -> 
+                return Ok "Deleted"
             | result when result.IsAcknowledged -> return Error "Nothing to delete"
             | _ -> return Error "Error while deleting"
     }   
@@ -235,8 +241,7 @@ module Mongo =
             let result = 
                 collection.DeleteMany(filter |> serializeFilter)
             match result with
-            | result when result.IsAcknowledged -> Ok "Deleted"
+            | result when result.IsAcknowledged && result.DeletedCount > 0 -> 
+                Ok "Deleted"
             | _ -> Error "Error while deleting"
-
-
 

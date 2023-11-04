@@ -6,3 +6,7 @@ module BuildHelpers =
 
     let setFields object = {| ``$set`` = object |}
 
+    let pushTo object = 
+        {|
+            ``$push`` = object
+        |}

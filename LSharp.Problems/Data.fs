@@ -5,6 +5,8 @@ open LSharp.Mongodb.BuildHelpers
 open LSharp.Mongodb.Mongo
 open MongoDB.Bson
 open FluentValidation
+open System
+open System.Globalization
 
 module Data = 
     let [<Literal>] connectionString = "mongodb://localhost:27017"
@@ -52,6 +54,7 @@ module Data =
     type Solution = {
         _id: ObjectId;
         user: string;
+        task: string;
         getExp: bool;
         published: bool;
         solutions: SolutionItem array;
@@ -75,10 +78,15 @@ module Data =
         connectionString 
          |> client 
          |> database databaseName
-         |> collection<LsharpTask> solutionsName
-
+         |> collection<Solution> solutionsName
 
     
+    let nowIso () =
+        DateTime
+            .Now
+            .ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+
+        
 
     // CATEGORIES
 
@@ -177,3 +185,167 @@ module Data =
 
     // SOLUTIONS
 
+
+    let getSolution userId taskId = 
+        solutions 
+        |> find {| user = userId.ToString(); task = taskId.ToString() |}
+        |> oneAsync
+
+
+    let solve userId taskId code = 
+        let createSolution () = {
+            _id = ObjectId.GenerateNewId();
+            task = taskId;
+            user = userId;
+            getExp = false;
+            published = false;
+            comments = Array.empty;
+            likes = Array.empty;
+            solutions = [| 
+                { 
+                    datetime = nowIso ();
+                    code = code;
+                    isValid = false;
+                } 
+            |]
+        } 
+
+        let insertSolution () = 
+            solutions
+            |> insertOneAsync (createSolution ())
+
+        let updateCode (solution: Solution) code = 
+
+            let last = 
+                solution.solutions 
+                |> Array.last
+
+            if last.isValid then
+                solutions 
+                |> updateOneAsync 
+                    {| _id = oid (solution._id.ToString()) |}  
+                    {| 
+                        ``$push`` = 
+                        {|
+                            solutions = 
+                            {|
+                                datetime = nowIso ();
+                                code = code;
+                                isValid = false;
+                            |}
+                        |}
+                    |}
+            else
+                solutions 
+                |> updateOneAsync 
+                    {| _id = oid (solution._id.ToString()); solutions = last |}  
+                    {| 
+                        ``$set`` = 
+                        {|
+                            ``solutions.$.code`` = code
+                        |}
+                    |}
+
+        task {
+            let! task = getTaskById taskId
+            let! solution = getSolution userId taskId
+            match (task, solution) with
+            | (None, _) -> return Error "Invalid task"
+            | (_, None) -> 
+                do! insertSolution ()
+                return Ok "Success"
+            | (_, Some solution) -> 
+                return! updateCode solution code
+                
+    }
+
+    let like userId solutionId = 
+    
+        let likeSolution userId (solution: Solution) = 
+            let hasLike = 
+                solution.likes
+                |> Array.exists ((=) userId)
+            
+            if hasLike then
+                solutions 
+                |> updateByIdAsync 
+                    (solution._id.ToString())
+                    {| ``$pull`` = {| likes = userId |} |}
+             else
+                solutions
+                |> updateByIdAsync
+                    (solution._id.ToString())
+                    {| ``$push`` = {| likes = userId |} |}
+
+        task {
+            let! solution = 
+                solutions 
+                |> findByIdAsync solutionId
+
+            match solution with
+            | None -> return Error "Solution not found"
+            | Some s -> return! likeSolution userId s
+        }
+
+
+    let getSolutionById id = 
+        solutions 
+        |> findByIdAsync id
+
+    let getSolutionsByTask taskId = 
+        solutions
+        |> find {| task = taskId |}
+        |> toListAsync
+
+    let commentSolution userId solutionId text = 
+        let postComment userId (solution: Solution) text = 
+            solutions
+            |> updateOneAsync
+                {| _id = oid (solution._id.ToString()) |}
+                {|
+                    ``$push`` = 
+                    {|
+                        comments = {
+                            user = userId;
+                            datetime = nowIso ();
+                            text = text
+                        }
+                    |}
+                |}
+    
+        task {
+            let! solution = 
+                solutions
+                |> findByIdAsync solutionId
+
+            match solution with
+            | None -> return Error "Solution is not found"
+            | Some s -> return! postComment userId s text
+        }
+
+    let deleteComment userId solution (comment: SolutionComment) =
+
+        let remove userId solution comment = 
+            solutions
+            |> updateOneAsync
+                {| _id = oid (solution._id.ToString()) |}
+                {|
+                    ``$pull`` = 
+                    {|
+                        comments = {
+                            user = userId;
+                            datetime = comment.datetime;
+                            text = comment.text
+                        }
+                    |}
+                |}
+
+        task {
+            let! toDelete = 
+                solutions
+                |> findByIdAsync solution
+
+            match toDelete with
+            | None -> return Error "Solution is not found"
+            | Some s -> return! remove userId s comment
+        }
