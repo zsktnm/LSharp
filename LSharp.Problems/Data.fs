@@ -34,7 +34,8 @@ type LsharpTask = { //LSharp task
     require: int;
     exp: int;
     description: string;
-    file: string;
+    code: string;
+    test: string;
 }
 
 

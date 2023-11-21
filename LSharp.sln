@@ -13,7 +13,9 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LSharp.Mongodb", "LSharp.Mo
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LSharp.Helpers", "LSharp.Helpers\LSharp.Helpers.fsproj", "{9978B546-E10A-4EDE-A356-8869F67DD2E3}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LSharp.Problems", "LSharp.Problems\LSharp.Problems.fsproj", "{1980451C-1DE8-4C9B-80E2-D4EFA210D639}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LSharp.Problems", "LSharp.Problems\LSharp.Problems.fsproj", "{1980451C-1DE8-4C9B-80E2-D4EFA210D639}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LSharp.CodeRunner", "LSharp.CodeRunner\LSharp.CodeRunner.fsproj", "{1D261429-5155-44C7-91B9-8B10F42C83B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{1980451C-1DE8-4C9B-80E2-D4EFA210D639}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1980451C-1DE8-4C9B-80E2-D4EFA210D639}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1980451C-1DE8-4C9B-80E2-D4EFA210D639}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D261429-5155-44C7-91B9-8B10F42C83B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D261429-5155-44C7-91B9-8B10F42C83B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D261429-5155-44C7-91B9-8B10F42C83B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D261429-5155-44C7-91B9-8B10F42C83B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

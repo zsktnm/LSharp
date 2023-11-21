@@ -60,32 +60,6 @@ let updateTaskHandler =
     }
 
 
-let updateTaskFileAsync maybeId filenameTask = task {
-    let! filename = filenameTask
-    match (maybeId, filename) with
-    | (Some id, Ok filename) -> return! updateTaskFile filename id
-    | (_, Error msg) -> return Error msg
-    | (None, _) -> return Error "Invalid Id"
-}
-
-
-let updateTaskFileHandler = 
-    let getFilename() = 
-        Path.Combine("tasks", Path.GetRandomFileName() + ".zip")
-
-    fun (next: HttpFunc) (ctx: HttpContext) -> task {
-        let maybeId = ctx.TryGetQueryStringValue("id")
-        match ctx.Request.ContentLength with
-        | header when not header.HasValue -> 
-            return! badRequest "No content-length header" next ctx
-        | header when header.Value > maxZipSize -> 
-            return! badRequest "Invalid size" next ctx
-        | header -> 
-            return! copyFile ctx.Request.Body header.Value (getFilename())
-            |> updateTaskFileAsync maybeId
-            |> responseFromResult next ctx
-    }
-
 
 let updateTaskImageAsync maybeId filenameTask = task {
     let! filename = filenameTask

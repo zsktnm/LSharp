@@ -64,7 +64,6 @@ let webApp = choose [
         PUT >=> authorize >=> isAdmin >=> updateTaskHandler
         DELETE >=> authorize >=> isAdmin >=> deleteTaskHandler
     ]
-    route "/task/file" >=> PUT >=> authorize >=> isAdmin >=> updateTaskFileHandler
     route "/task/image" >=> PUT >=> authorize >=> isAdmin >=> updateTaskImageHandler
     route "/solutions/solve" >=> POST >=> authorize >=> solveHandler
     route "/solutions/find" >=> GET >=> authorize >=> getSolutionHandler

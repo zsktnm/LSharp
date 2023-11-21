@@ -60,6 +60,8 @@ type TaskDTO = {
     require: int;
     exp: int;
     description: string;
+    code: string;
+    test: string;
 }
 
 
@@ -70,7 +72,8 @@ let toLsharpTask (dto: TaskDTO) = {
     require = dto.require;
     exp = dto.exp;
     description = dto.description;
-    file = null;
+    code = dto.code;
+    test = dto.test;
     image = null;
 }
 
@@ -95,6 +98,12 @@ type TaskValidator() =
             .LessThan(10000)
             |> ignore
         base.RuleFor(fun t -> t.description)
+            .NotEmpty()
+            |> ignore
+        base.RuleFor(fun t -> t.code)
+            .NotEmpty()
+            |> ignore
+        base.RuleFor(fun t -> t.test)
             .NotEmpty()
             |> ignore
 
