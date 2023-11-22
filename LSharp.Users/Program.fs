@@ -49,8 +49,7 @@ let replaceUserNameHandler =
         ctx.TryGetQueryStringValue "name"
 
     fun (next: HttpFunc) (ctx: HttpContext) -> task { 
-        let name = ctx.TryGetQueryStringValue "name"
-        match name with
+        match getName ctx with
         | None -> 
             return! Req.badRequest "Invalid name" next ctx
         | Some name -> 
