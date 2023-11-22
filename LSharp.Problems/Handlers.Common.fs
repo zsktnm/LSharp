@@ -23,3 +23,6 @@ let responseFromResult next ctx result = task {
 let getUserId (ctx: HttpContext) = 
     ctx.User.FindFirst(ClaimTypes.NameIdentifier).Value
 
+let getQueryValue str (ctx: HttpContext) = 
+    ctx.TryGetQueryStringValue(str)
+

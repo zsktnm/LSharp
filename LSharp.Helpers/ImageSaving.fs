@@ -44,7 +44,7 @@ module ImageSaving =
             do! loop len
             return Success (stream.ToArray())
         with
-            | error -> return ServerError ("Can't copy the file")
+            | error -> return InternalError ("Can't copy the file")
     } 
 
     let copyPngFile (body: Stream) size filename = task {
@@ -55,7 +55,7 @@ module ImageSaving =
                 do! File.WriteAllBytesAsync(Path.Combine(basePath, filename), bytes)
                 return Success filename
             with
-                | err -> return ServerError $"Error while copying {err.Message}" 
+                | err -> return InternalError $"Error while copying {err.Message}" 
         }
 
    
@@ -63,7 +63,7 @@ module ImageSaving =
         match (result >>= isValidPng) with
         | Success bytes -> return! saveToFile bytes
         | NotFound err -> return NotFound err
-        | ServerError err -> return ServerError err
+        | InternalError err -> return InternalError err
         | BadRequest err -> return BadRequest err
  
     }

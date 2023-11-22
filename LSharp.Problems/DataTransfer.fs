@@ -10,6 +10,7 @@ open Microsoft.AspNetCore.Http
 let listOfErrors (errors: Results.ValidationResult) = 
     errors.Errors 
     |> Seq.map (fun err -> err.ErrorMessage)
+    |> String.concat "\n"
 
 let readDto<'a> (ctx: HttpContext) = task { 
     let! entity = ctx.BindModelAsync<'a>()

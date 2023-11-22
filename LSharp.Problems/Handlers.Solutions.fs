@@ -3,6 +3,8 @@
 open LSharp.Problems.Data
 open LSharp.Problems.DataTransfer
 open LSharp.Problems.Handlers.Common
+open LSharp.Helpers.ActionResults
+open LSharp.Helpers.Handlers
 
 open Giraffe
 open Microsoft.AspNetCore.Http
@@ -18,7 +20,7 @@ let solveHandler =
         | Ok code -> 
             return! (userId, code.taskId, code.code)
             |||> solve 
-            |> responseFromResult next ctx
+            |> actionResultTaskToResponse next ctx
     }
 
 
@@ -27,7 +29,7 @@ let deleteTaskHandler =
         let maybeId = ctx.TryGetQueryStringValue("id")
         match maybeId with
         | None -> return! badRequest "Invalid id" next ctx
-        | Some id -> return! deleteTask id |> responseFromResult next ctx
+        | Some id -> return! deleteTask id |> actionResultTaskToResponse next ctx
     }
 
 
@@ -39,7 +41,7 @@ let likeSolutionHandler =
         | None -> return! badRequest "Invalid id" next ctx
         | Some solutionId -> 
             return! like userId solutionId 
-            |> responseFromResult next ctx
+            |> actionResultTaskToResponse next ctx
     }
 
 

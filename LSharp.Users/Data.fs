@@ -40,7 +40,7 @@ module Data =
         |> updateOneAsync  
             {| _id = id |}
             (setFields {| name = newName |})
-        |> ActionResult.fromResultTask ServerError
+        |> ActionResult.fromResultTask InternalError
 
 
     let updateUserAvatarAsync newPhoto id =
@@ -48,7 +48,7 @@ module Data =
         |> updateOneAsync 
             {| _id = id |}
             (setFields {| avatar = newPhoto |})
-        |> ActionResult.fromResultTask ServerError
+        |> ActionResult.fromResultTask InternalError
 
 
     let updateUser id user = 
@@ -57,7 +57,7 @@ module Data =
         else
             usersCollection 
             |> replaceOne {| _id = id |} user
-            |> ActionResult.fromResult ServerError
+            |> ActionResult.fromResult InternalError
 
     
     let updateUserAsync id user = task {
@@ -66,7 +66,7 @@ module Data =
         else
             return! usersCollection 
             |> replaceOneAsync {| _id = id |} user
-            |> ActionResult.fromResultTask ServerError
+            |> ActionResult.fromResultTask InternalError
     }
 
 

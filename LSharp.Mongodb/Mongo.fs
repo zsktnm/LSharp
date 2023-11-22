@@ -6,6 +6,11 @@ open BuildHelpers
 
 module Mongo = 
     open System.Text.Json
+
+    type UpdateResult<'a, 'b> = 
+    | Sucessful of 'a
+    | ClientError of 'b
+    | ServerError of 'b
     
 
     let client (connectionString: string) = MongoClient(connectionString)
@@ -156,11 +161,13 @@ module Mongo =
             match updateResult with
             | Ok result -> 
                 let! r = result
-                if r.IsAcknowledged then 
-                    return Ok $"Acknowledged. Modified: {r.ModifiedCount} Matched: {r.MatchedCount}"
+                if r.IsAcknowledged && r.MatchedCount = 0 && r.ModifiedCount = 0 then 
+                    return ClientError "Not found"
+                elif r.IsAcknowledged then
+                    return Sucessful $"Acknowledged. Modified: {r.ModifiedCount} Matched: {r.MatchedCount}"
                 else
-                    return Error "Error while update"
-            | Error err -> return Error err
+                    return ServerError "Error while update"
+            | Error err -> return ClientError err
 
         }
 
@@ -206,8 +213,10 @@ module Mongo =
                 collection.DeleteOne(filter |> serializeFilter)
             match result with
             | result when result.IsAcknowledged && result.DeletedCount > 0 -> 
-                Ok "Deleted"
-            | _ -> Error "Error while deleting"
+                Sucessful "Deleted"
+            | result when result.IsAcknowledged -> 
+                ClientError "Nothing to delete"
+            | _ -> ServerError "Error while deleting"
 
     let deleteOneAsync
         filter
@@ -216,9 +225,9 @@ module Mongo =
                 collection.DeleteOneAsync(filter |> serializeFilter)
             match result with
             | result when result.IsAcknowledged && result.DeletedCount > 0 -> 
-                return Ok "Deleted"
-            | result when result.IsAcknowledged -> return Error "Nothing to delete"
-            | _ -> return Error "Error while deleting"
+                return Sucessful "Deleted"
+            | result when result.IsAcknowledged -> return ClientError "Nothing to delete"
+            | _ -> return ServerError "Error while deleting"
     }   
 
 
@@ -226,7 +235,7 @@ module Mongo =
         id
         (collection: IMongoCollection<'a>) = task {
             match tryParseOid id with
-            | None -> return Error "Invalid Id"
+            | None -> return ClientError "Invalid Id"
             | Some id -> 
                 return! collection
                 |> deleteOneAsync {| _id = oid id |}

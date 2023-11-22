@@ -40,7 +40,7 @@ let actionResultToResponse next ctx result = task {
         | Success x -> return! Req.ok x next ctx 
         | NotFound msg -> return! Req.notFound msg next ctx
         | BadRequest msg -> return! Req.badRequest msg next ctx
-        | ServerError msg -> return! Req.internalError msg next ctx
+        | InternalError msg -> return! Req.internalError msg next ctx
     }
 
 let actionResultTaskToResponse next ctx result = task {
@@ -48,6 +48,6 @@ let actionResultTaskToResponse next ctx result = task {
         | Success x -> return! Req.ok x next ctx 
         | NotFound msg -> return! Req.notFound msg next ctx
         | BadRequest msg -> return! Req.badRequest msg next ctx
-        | ServerError msg -> return! Req.internalError msg next ctx
+        | InternalError msg -> return! Req.internalError msg next ctx
     }
 

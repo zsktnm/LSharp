@@ -7,6 +7,7 @@ open MongoDB.Bson
 open FluentValidation
 open System
 open System.Globalization
+open LSharp.Helpers.ActionResults
 
 
 let [<Literal>] connectionString = "mongodb://localhost:27017"
@@ -94,101 +95,116 @@ let nowIso () =
         .Now
         .ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
 
+let updateToAction result =
+    match result with
+    | Sucessful x ->  Success x
+    | ClientError err ->  BadRequest err
+    | ServerError err ->  InternalError err
+
+let updateToActionTask result = task {
+    match! result with
+    | Sucessful x -> return Success x
+    | ClientError err -> return BadRequest err
+    | ServerError err -> return InternalError err
+}
 
 // CATEGORIES
 
-let getCategoryById (id: string) = task {
-    return! categories
+let getCategoryById (id: string) = 
+    categories
     |> findByIdAsync id
-}
+    |> ActionResult.fromOptionTask "Category is not found"
 
-let getAllCategories () = task {
-    return! categories 
+
+let getAllCategories () = 
+    categories 
     |> getAll
     |> toListAsync
-}
 
-let addCategory category = task {
-    return! categories 
+
+let addCategory category = 
+    categories 
     |> insertOneAsync category
-}
 
-let updateCategory id update = task {
-    return! categories |>
-    updateByIdAsync id {| ``$set`` = update |}
-}
 
-let updateCategoryImage filename id = task {
-    return! categories |>
-    updateByIdAsync id (setFields {| image = filename |})
-} 
+let updateCategory id update =
+    categories 
+    |> updateByIdAsync id {| ``$set`` = update |}
+    |> updateToActionTask
 
-let deleteCategory id = task {
-    return! categories |>
-    deleteByIdAsync id 
-}
+
+let updateCategoryImage filename id = 
+    categories 
+    |> updateByIdAsync id (setFields {| image = filename |})
+    |> updateToActionTask
+
+
+let deleteCategory id = 
+    categories
+    |> deleteByIdAsync id
+    |> updateToActionTask
 
 
 // TASKS
 
-let getAllTasks () = task {
-    return! tasks 
-        |> getAll
-        |> toListAsync
-}
+let getAllTasks () = 
+    tasks 
+    |> getAll
+    |> toListAsync
 
 
-let getTasksByCategory categoryId = task {
-    return! tasks 
-        |> find {| category = categoryId |}
-        |> toListAsync
-}
+let getTasksByCategory categoryId = 
+    tasks 
+    |> find {| category = categoryId |}
+    |> toListAsync
 
 
-let getTaskById (id: string) = task {
-    return! tasks 
+
+let getTaskById (id: string) = 
+    tasks 
     |> findByIdAsync id
-}
+    |> ActionResult.fromOptionTask "Task not found"
 
 
-let insertTask (lsharpTask: LsharpTask) = task {
-    let! category = 
-        categories 
-        |> findByIdAsync lsharpTask.category
 
-    match category with
-    | None -> return Error "Invalid category"
-    | Some _ -> 
-        try
-            do! tasks |> insertOneAsync lsharpTask
-            return Ok "Success"
-        with
-            | _ -> return Error "Error while adding the task"
-}
+let insertTask (lsharpTask: LsharpTask) = 
+    let insert t tasks = task {
+        do! insertOneAsync t tasks
+        return Success "Success"
+    }
+    categories
+    |> findByIdAsync lsharpTask.category
+    |> ActionResult.fromOptionTask "invalid category"
+    |> ActionResult.bindTask (fun _ -> insert lsharpTask tasks)
 
 
-let updateTask lsharpTask id = task {
-    return! tasks |> 
-    updateByIdAsync id (setFields lsharpTask)
-}
+
+let updateTask lsharpTask id = 
+    tasks 
+    |> updateByIdAsync id (setFields lsharpTask)
+    |> updateToActionTask
 
 
-let updateTaskFile filename id = task {
-    return! tasks |>
-    updateByIdAsync id (setFields {| file = filename |})
-}
+
+let updateTaskFile filename id = 
+    tasks 
+    |> updateByIdAsync id (setFields {| file = filename |})
+    |> updateToActionTask
 
 
-let updateTaskImage filename id = task {
-    return! tasks |>
-    updateByIdAsync id (setFields {| image = filename |})
-}
+
+let updateTaskImage filename id =
+    tasks 
+    |> updateByIdAsync id (setFields {| image = filename |})
+    |> updateToActionTask
 
 
-let deleteTask id = task {
-    return! tasks |>
-    deleteByIdAsync id 
-}
+
+let deleteTask id = 
+    tasks 
+    |> deleteByIdAsync id 
+    |> updateToActionTask
+
 
 
 // SOLUTIONS
@@ -197,6 +213,7 @@ let getSolution userId taskId =
     solutions 
     |> find {| user = userId.ToString(); task = taskId.ToString() |}
     |> oneAsync
+    |> ActionResult.fromOptionTask "Not found"
 
 
 let solve userId taskId code = 
@@ -242,26 +259,37 @@ let solve userId taskId code =
                         |}
                     |}
                 |}
+            |> ActionResult.fromResultTask InternalError
         else
             solutions 
             |> updateOneAsync 
-                {| _id = oid (solution._id.ToString()); solutions = last |}  
+                {| 
+                    _id = oid (solution._id.ToString()); 
+                    solutions = {| 
+                        ``$elemMatch`` = {|
+                            datetime = last.datetime;
+                            code = last.code;
+                        |}
+                    |} 
+                |}  
                 {| 
                     ``$set`` = 
                     {|
                         ``solutions.$.code`` = code
                     |}
                 |}
+            |> ActionResult.fromResultTask InternalError
 
     task {
+    // TODO: refactor
         let! task = getTaskById taskId
         let! solution = getSolution userId taskId
         match (task, solution) with
-        | (None, _) -> return Error "Invalid task"
-        | (_, None) -> 
+        | (NotFound msg, _) -> return NotFound msg
+        | (_, NotFound _) -> 
             do! insertSolution ()
-            return Ok "Success"
-        | (_, Some solution) -> 
+            return Success "Success"
+        | (_, Success solution) -> 
             return! updateCode solution code
     }
 
@@ -277,11 +305,13 @@ let like userId solutionId =
             |> updateByIdAsync 
                 (solution._id.ToString())
                 {| ``$pull`` = {| likes = userId |} |}
-            else
+            |> updateToActionTask
+        else
             solutions
             |> updateByIdAsync
                 (solution._id.ToString())
                 {| ``$push`` = {| likes = userId |} |}
+            |> updateToActionTask
 
     task {
         let! solution = 
@@ -289,7 +319,7 @@ let like userId solutionId =
             |> findByIdAsync solutionId
 
         match solution with
-        | None -> return Error "Solution not found"
+        | None -> return NotFound "Solution not found"
         | Some s -> return! likeSolution userId s
     }
 

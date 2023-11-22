@@ -4,30 +4,23 @@ open LSharp.Problems.Data
 open LSharp.Problems.DataTransfer
 open LSharp.Problems.Handlers.Common
 open LSharp.Helpers.ImageSaving
+open LSharp.Helpers.ActionResults
+open LSharp.Helpers.Handlers
 
 open Giraffe
 open Microsoft.AspNetCore.Http
 open System.IO
-
-
-let findCategoryResult id next ctx = task {
-    match! getCategoryById id with
-    | None -> 
-        return! notFound "not found" next ctx
-    | Some category -> 
-        return! json category next ctx
-}
+open System.Threading.Tasks
+open System
 
 
 let findCategoryHandler = 
-   fun (next: HttpFunc) (ctx: HttpContext) -> task { 
-        let id = ctx.TryGetQueryStringValue("id")
-        match id with
-        | None -> 
-            return! notFound "not found" next ctx
-        | Some id -> 
-            return! findCategoryResult id next ctx
-    } 
+    fun (next: HttpFunc) (ctx: HttpContext) -> 
+        getQueryValue "id" ctx
+        |> ActionResult.fromOption "Id is empty"    
+        |> Task.FromResult
+        |> ActionResult.bindTask (fun id -> getCategoryById id)
+        |> actionResultTaskToResponse next ctx
 
 
 let getCategoriesHandler = 
@@ -36,63 +29,69 @@ let getCategoriesHandler =
         return! json categories next ctx
     } 
 
+let addCategoryFromDto dto = task {
+    do! addCategory (dto |> toCategory)
+    return Success "Success"
+}
 
 let addCategoryHandler =  
-    fun (next: HttpFunc) (ctx: HttpContext) -> task { 
-        match! readDto<CategoryDTO> ctx with
-        | Error errors -> 
-            return! badRequest errors next ctx
-        | Ok dto -> 
-            do! addCategory (dto |> toCategory)
-            return! Successful.NO_CONTENT next ctx
-    }
+    fun (next: HttpFunc) (ctx: HttpContext) -> 
+        readDto<CategoryDTO> ctx
+        |> ActionResult.fromResultTask BadRequest
+        |> ActionResult.bindTask (fun dto -> addCategoryFromDto dto)
+        |> actionResultTaskToResponse next ctx
 
 
-let updateCategoryResult id dto next ctx = task {
-    match! (updateCategory id dto) with
-    | Ok _ -> return! Successful.NO_CONTENT next ctx
-    | Error err -> return! badRequest err next ctx
-}
+let updateCategoryResult id dto next ctx = 
+    updateCategory id dto
+    |> actionResultTaskToResponse next ctx
 
 
 let updateCategoryHandler = 
-    fun (next: HttpFunc) (ctx: HttpContext) -> task { 
-        let id = ctx.TryGetQueryStringValue("id")
-        let! dto = readDto<CategoryDTO> ctx
-        return! 
-            match (id, dto) with
-            | (None, _) -> 
-                badRequest "id is undefined" next ctx
-            | (_, Error validationErrors) -> 
-                badRequest validationErrors next ctx
-            | (Some id, Ok dto) -> 
-                updateCategoryResult id dto next ctx
+    let asyncMapResult func result = task {
+        let! result' = result
+        return result' |> Result.map func
     }
 
+    let idWithDto ctx id =
+        readDto<CategoryDTO> ctx 
+        |> asyncMapResult (fun dto -> (id, dto))
+        |> ActionResult.fromResultTask BadRequest
 
-let updateCategoryImageAsync maybeId filenameTask = task {
-    let! filename = filenameTask
-    match (maybeId, filename) with
-    | (Some id, Ok filename) -> return! updateCategoryImage filename id
-    | (_, Error msg) -> return Error msg
-    | (None, _) -> return Error "Invalid Id"
-}
+    let (>>=) l r = ActionResult.bindTask r l
+
+    fun (next: HttpFunc) (ctx: HttpContext) -> 
+        getQueryValue "id" ctx
+        |> ActionResult.fromOption "Id is empty"    
+        |> Task.FromResult
+        >>= idWithDto ctx
+        >>= fun (id, dto) -> updateCategory id dto
+        |> actionResultTaskToResponse next ctx
 
 
 let updateCategoryImageHandler = 
     let getFilename() = 
         Path.Combine("images", Path.GetRandomFileName() + ".png")
 
-    fun (next: HttpFunc) (ctx: HttpContext) -> task { 
-        let maybeId = ctx.TryGetQueryStringValue("id")
-        match ctx.Request.ContentLength with
+    let checkContentLength id (header: Nullable<int64>) = 
+        match header with
         | header when not header.HasValue -> 
-            return! RequestErrors.BAD_REQUEST "No content-length header" next ctx
+            BadRequest "No content-length header"
         | header when header.Value > maxImageSize -> 
-            return! RequestErrors.BAD_REQUEST "Invalid size" next ctx
+            BadRequest "Invalid size" 
         | header -> 
-            return! copyPngFile ctx.Request.Body header.Value (getFilename())
-            |> updateCategoryImageAsync maybeId
-            |> responseFromResult next ctx
-    }
+            Success (id, header.Value)
+
+    let copyFile body len filename id = 
+        copyPngFile body len filename
+        |> ActionResult.bindTask (fun filename -> updateCategoryImage filename id)
+
+
+    fun (next: HttpFunc) (ctx: HttpContext) -> 
+        getQueryValue "id" ctx
+        |> ActionResult.fromOption "Id is empty"
+        |> ActionResult.bind (fun id -> checkContentLength id (ctx.Request.ContentLength))
+        |> Task.FromResult
+        |> ActionResult.bindTask (fun (id, length) -> copyFile ctx.Request.Body length (getFilename ()) id)
+        |> actionResultTaskToResponse next ctx
 
