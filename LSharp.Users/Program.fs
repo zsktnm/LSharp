@@ -72,9 +72,9 @@ let setPhotoHandler =
     fun (next: HttpFunc) (ctx: HttpContext) -> task { 
         match ctx.Request.ContentLength with
         | header when not header.HasValue -> 
-            return! RequestErrors.BAD_REQUEST "No content-length header" next ctx
+            return! Req.badRequest "No content-length header" next ctx
         | header when header.Value > maxFileSize -> 
-            return! RequestErrors.BAD_REQUEST "Invalid size" next ctx
+            return! Req.badRequest "Invalid size" next ctx
         | header -> 
             return! copyPngFile ctx.Request.Body header.Value (getFilename())
             |> changeAvatarAsync (getUserId ctx) 
