@@ -17,6 +17,8 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LSharp.Problems", "LSharp.P
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LSharp.CodeRunner", "LSharp.CodeRunner\LSharp.CodeRunner.fsproj", "{1D261429-5155-44C7-91B9-8B10F42C83B8}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LSharp.Rabbit", "LSharp.Rabbit\LSharp.Rabbit.fsproj", "{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{1D261429-5155-44C7-91B9-8B10F42C83B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1D261429-5155-44C7-91B9-8B10F42C83B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1D261429-5155-44C7-91B9-8B10F42C83B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

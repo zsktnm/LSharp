@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LSharp.Mongodb\LSharp.Mongodb.fsproj" />
+    <ProjectReference Include="..\LSharp.Rabbit\LSharp.Rabbit.fsproj" />
   </ItemGroup>
 
 </Project>

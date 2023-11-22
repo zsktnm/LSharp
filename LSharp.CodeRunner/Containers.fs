@@ -4,6 +4,11 @@ open System.IO
 open System.Diagnostics
 open System.Threading
 
+
+type TestResult = 
+| Pass of string
+| Fail of string list
+
 // TODO: use settings
 
 let basePath = @"C:\AppTest\"
@@ -37,7 +42,7 @@ let startTests folder = task {
     let proc = Process.Start(startInfo)
     do! proc.WaitForExitAsync()
     match proc.ExitCode with
-    | 0 -> return Ok (proc.StandardOutput.ReadToEnd())
+    | 0 -> return Ok "Success"
     | _ -> return Error (proc.StandardOutput.ReadToEnd())
 }
 
@@ -47,8 +52,8 @@ let executeTests code tests = task {
     match! startTests folder with
     | Error err -> 
         do removeFolder folder
-        return Error err
+        return Fail [err]
     | Ok msg -> 
         do removeFolder folder
-        return Ok msg
+        return Pass msg
 }

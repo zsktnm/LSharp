@@ -33,3 +33,10 @@ let loadTest id = task {
     | None -> return Error "Invalid Id"
     | Some t -> return Ok t.test
 }
+
+let loadTask id = task {
+    let! found = tasks |> findByIdAsync id
+    match found with
+    | None -> return Error "Invalid Id"
+    | Some t -> return Ok t
+}
