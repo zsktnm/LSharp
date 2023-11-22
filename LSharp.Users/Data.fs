@@ -2,6 +2,7 @@
 
 open LSharp.Mongodb.Mongo
 open LSharp.Mongodb.BuildHelpers
+open LSharp.Helpers.ActionResults
 
 module Data = 
     let [<Literal>] connectionString = "mongodb://localhost:27017"
@@ -27,44 +28,45 @@ module Data =
             |> collection<User> collectionName
 
 
-    let findUserByIdAsync id = task {
-        return! usersCollection 
-                |> find {| _id = id |}
-                |> oneAsync
-    }
+    let findUserByIdAsync id =
+        usersCollection 
+        |> find {| _id = id |}
+        |> oneAsync
+        |> ActionResult.fromOptionTask "Id is not found"
+    
 
-
-    let updateUserNameAsync newName id = task {
-        return! usersCollection 
+    let updateUserNameAsync newName id = 
+        usersCollection 
         |> updateOneAsync  
             {| _id = id |}
             (setFields {| name = newName |})
-    }
+        |> ActionResult.fromResultTask ServerError
 
 
-    let updateUserAvatarAsync newPhoto id = task {
-        return! usersCollection
+    let updateUserAvatarAsync newPhoto id =
+        usersCollection
         |> updateOneAsync 
             {| _id = id |}
             (setFields {| avatar = newPhoto |})
-               
-    }
+        |> ActionResult.fromResultTask ServerError
 
 
     let updateUser id user = 
         if user._id <> id then
-            Error "invalid Id"
+            BadRequest "invalid Id"
         else
             usersCollection 
             |> replaceOne {| _id = id |} user
+            |> ActionResult.fromResult ServerError
 
     
     let updateUserAsync id user = task {
         if user._id <> id then
-            return Error "invalid Id"
+            return BadRequest "invalid Id"
         else
             return! usersCollection 
             |> replaceOneAsync {| _id = id |} user
+            |> ActionResult.fromResultTask ServerError
     }
 
 

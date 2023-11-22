@@ -120,7 +120,7 @@ module Mongo =
                     update |> serializeUpdate
                 )
             match result with
-            | result when result.IsAcknowledged && result.ModifiedCount > 0 -> 
+            | result when result.IsAcknowledged -> 
                 Ok $"Acknowledged. Modified: {result.ModifiedCount} Matched: {result.MatchedCount}"
             | _ -> Error "Error while updating"
 
@@ -135,7 +135,7 @@ module Mongo =
                     update |> serializeUpdate
                 )
             match result with
-            | result when result.IsAcknowledged && result.ModifiedCount > 0 -> 
+            | result when result.IsAcknowledged -> 
                 return Ok $"Acknowledged. Modified: {result.ModifiedCount} Matched: {result.MatchedCount}"
             | _ -> return Error "Error while updating"
     }
@@ -156,7 +156,7 @@ module Mongo =
             match updateResult with
             | Ok result -> 
                 let! r = result
-                if r.IsAcknowledged && r.ModifiedCount > 0 then 
+                if r.IsAcknowledged then 
                     return Ok $"Acknowledged. Modified: {r.ModifiedCount} Matched: {r.MatchedCount}"
                 else
                     return Error "Error while update"

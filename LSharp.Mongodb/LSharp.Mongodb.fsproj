@@ -14,4 +14,8 @@
     <PackageReference Include="MongoDB.Driver" Version="2.22.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\LSharp.Helpers\LSharp.Helpers.fsproj" />
+  </ItemGroup>
+
 </Project>

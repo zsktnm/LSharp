@@ -2,6 +2,7 @@
 
 open SixLabors.ImageSharp
 open System.IO
+open ActionResults
 
 module ImageSaving = 
     let [<Literal>] basePath = "wwwroot"
@@ -10,11 +11,11 @@ module ImageSaving =
         try
             let format = Image.DetectFormat(bytes)
             if format.DefaultMimeType = "image/png" then 
-                Ok bytes
+                Success bytes
             else
-                Error "Invalid file format"
+                BadRequest "Invalid file format"
         with
-            | _ -> Error "Invalid file format"
+            | _ -> BadRequest "Can't detect file format"
 
 
     let emunerateStream (body: Stream) (len: int64) = seq {
@@ -41,46 +42,29 @@ module ImageSaving =
             }
 
             do! loop len
-            return Ok (stream.ToArray())
+            return Success (stream.ToArray())
         with
-            | error -> return Error ("Error while copying " + error.Message)
+            | error -> return ServerError ("Can't copy the file")
     } 
 
     let copyPngFile (body: Stream) size filename = task {
-        let (>>=) l r = Result.bind r l
+        let (>>=) l r = ActionResult.bind r l
 
         let saveToFile (bytes: byte array) = task {
             try
                 do! File.WriteAllBytesAsync(Path.Combine(basePath, filename), bytes)
-                return Ok filename
+                return Success filename
             with
-                | err -> return Error $"Error while copying {err.Message}" 
+                | err -> return ServerError $"Error while copying {err.Message}" 
         }
 
-        try
-            let! result = bodyToBytesAsync body size
-            match (result >>= isValidPng) with
-            | Error msg -> return Error msg
-            | Ok bytes -> return! saveToFile bytes
-        with
-            | err -> return Error $"Error while copying {err.Message}" 
-    }
-
-
-    let copyFile (body: Stream) size filename = task {
-        let saveToFile (bytes: byte array) = task {
-            try
-                do! File.WriteAllBytesAsync(Path.Combine(basePath, filename), bytes)
-                return Ok filename
-            with
-                | err -> return Error $"Error while copying {err.Message}" 
-        }
-        try
-            let! result = bodyToBytesAsync body size
-            match result with
-            | Error msg -> return Error msg
-            | Ok bytes -> return! saveToFile bytes
-        with
-            | err -> return Error $"Error while copying {err.Message}"
+   
+        let! result = bodyToBytesAsync body size
+        match (result >>= isValidPng) with
+        | Success bytes -> return! saveToFile bytes
+        | NotFound err -> return NotFound err
+        | ServerError err -> return ServerError err
+        | BadRequest err -> return BadRequest err
+ 
     }
 
