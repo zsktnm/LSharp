@@ -5,76 +5,77 @@ open LSharp.Problems.DataTransfer
 open LSharp.Problems.Handlers.Common
 open LSharp.Helpers.ActionResults
 open LSharp.Helpers.Handlers
+open System
 
 open Giraffe
 open Microsoft.AspNetCore.Http
+open System.Threading.Tasks
 
 
 let solveHandler = 
-    fun (next: HttpFunc) (ctx: HttpContext) -> task {
-        let userId = getUserId ctx
-        let code = readDto<CodeDTO> ctx
-        match! code with
-        | Error validationErrors -> 
-            return! badRequest validationErrors next ctx
-        | Ok code -> 
-            return! (userId, code.taskId, code.code)
-            |||> solve 
-            |> actionResultTaskToResponse next ctx
-    }
+    fun (next: HttpFunc) (ctx: HttpContext) -> 
+        readDto<CodeDTO> ctx
+        |> ActionResult.fromResultTask BadRequest
+        |> ActionResult.mapTask (fun code -> (getUserId ctx, code.taskId, code.code))
+        |> ActionResult.bindTask (fun values -> values |||> solve)
+        |> actionResultTaskToResponse next ctx
+    
 
 
 let deleteTaskHandler = 
-    fun (next: HttpFunc) (ctx: HttpContext) -> task {
-        let maybeId = ctx.TryGetQueryStringValue("id")
-        match maybeId with
-        | None -> return! badRequest "Invalid id" next ctx
-        | Some id -> return! deleteTask id |> actionResultTaskToResponse next ctx
-    }
+    fun (next: HttpFunc) (ctx: HttpContext) -> 
+        ctx.TryGetQueryStringValue("id")
+        |> ActionResult.fromOption "invalid id"
+        |> Task.FromResult
+        |> ActionResult.bindTask deleteTask
+        |> actionResultTaskToResponse next ctx
 
 
 let likeSolutionHandler = 
-    fun (next: HttpFunc) (ctx: HttpContext) -> task {
-        let maybeId = ctx.TryGetQueryStringValue("id")
+    fun (next: HttpFunc) (ctx: HttpContext) -> 
         let userId = getUserId ctx
-        match maybeId with
-        | None -> return! badRequest "Invalid id" next ctx
-        | Some solutionId -> 
-            return! like userId solutionId 
-            |> actionResultTaskToResponse next ctx
-    }
+        ctx.TryGetQueryStringValue("id")
+        |> ActionResult.fromOption "invalid id"
+        |> Task.FromResult
+        |> ActionResult.bindTask (fun id -> like userId id)
+        |> actionResultTaskToResponse next ctx
+    
 
 
 let getSolutionHandler = 
-    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+    fun (next: HttpFunc) (ctx: HttpContext) -> 
         let userId = getUserId ctx
-        let maybeId = ctx.TryGetQueryStringValue("id")
-        match maybeId with
-        | None -> 
-            return! badRequest "Invalid id" next ctx
-        | Some solutionId -> 
-            match! getSolutionById solutionId with
-            | Some s when s.published || s.user = userId ->
-                return! ok (s |> toSolutionView userId) next ctx
-            | _ -> return! notFound "Not found" next ctx
-    }
+        ctx.TryGetQueryStringValue("id")
+        |> ActionResult.fromOption "invalid id"
+        |> Task.FromResult
+        |> ActionResult.bindTask getSolutionById
+        |> ActionResult.mapTask (fun solution -> toSolutionView userId solution)
+        |> actionResultTaskToResponse next ctx
 
+
+let getPage (ctx: HttpContext) = 
+    let tryParse (input: string) =
+        let (isValid, result) = Int32.TryParse(input)
+        match isValid with
+        | false -> None
+        | true -> Some result
+
+    ctx.TryGetQueryStringValue("page") 
+    |> Option.bind tryParse
+    |> function
+        | None -> 1
+        | Some p when p <= 0 -> 1
+        | Some p -> p
+    
 
 let getSolutionsByTaskHandler = 
     fun (next: HttpFunc) (ctx: HttpContext) -> task {
         let userId = getUserId ctx
-        let maybeId = ctx.TryGetQueryStringValue("id")
-        match maybeId with
-        | None -> 
-            return! badRequest "Invalid id" next ctx
-        | Some taskId -> 
-            let! solutions = getSolutionsByTask taskId 
-            return! ok 
-                    (solutions 
-                    |> Seq.map (fun s -> toSolutionView userId s)
-                    |> Seq.where (fun s -> s.published)
-                    )
-                    next ctx
+        let page = getPage ctx
+        let! solutions = 
+            ctx.TryGetQueryStringValue("id")
+            |> getSolutionsByTask page
+        return! Req.ok (solutions |> Array.map (fun s -> toSolutionView userId s)) next ctx
     }
 
 

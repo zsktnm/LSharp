@@ -327,11 +327,30 @@ let like userId solutionId =
 let getSolutionById id = 
     solutions 
     |> findByIdAsync id
+    |> ActionResult.fromOptionTask "not found"
 
-let getSolutionsByTask taskId = 
-    solutions
-    |> find {| task = taskId; |}
-    |> toListAsync
+let getSolutionsByTask page taskId = task {
+// TODO: check pages
+    let! list = 
+        solutions
+        |> find {| task = taskId; |}
+        |> toListAsync
+    let itemsCount = 25
+    let pagesCount = (double list.Count / double itemsCount) |> ceil |> int
+    match page with
+    | page when page <= 0 || pagesCount = 0 -> 
+        return Array.empty
+    | page when page > pagesCount ->
+        return list
+        |> Seq.chunkBySize itemsCount
+        |> Seq.skip (page - 1)
+        |> Seq.head
+    | page -> 
+        return list
+        |> Seq.chunkBySize itemsCount
+        |> Seq.skip (page - 1)
+        |> Seq.head
+}
 
 
 let getSolutionsByUser userId = 
