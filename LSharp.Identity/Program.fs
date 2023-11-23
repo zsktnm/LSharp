@@ -17,6 +17,9 @@ open LSharp.Identity.Core
 open Microsoft.AspNetCore.Http
 open System.Security.Claims
 open System.IdentityModel.Tokens.Jwt
+open LSharp.Helpers.Handlers
+open LSharp.Helpers.ActionResults
+open LSharp.Identity.Data
 
 let [<Literal>] exitCode = 0
 
@@ -50,65 +53,51 @@ let getTokensOf (user: LsharpUser) (roles: string) =
         RefreshToken = user.RefreshToken
     }
 
-let signIn (user: LsharpUser) (userService: UserManager<LsharpUser>) = task {
+let signIn (userService: UserManager<LsharpUser>) (user: LsharpUser) = task {
     user.GenerateRefreshToken()
     let! roles = userService.GetRolesAsync(user) 
     match! userService.UpdateAsync(user) with
-    | r when r.Succeeded -> return roles |> String.concat ";" |> getTokensOf user |> Ok
-    | r -> return Error r.Errors
+    | r when r.Succeeded -> return roles |> String.concat ";" |> getTokensOf user |> Success
+    | r -> return BadRequest (r.Errors |> Seq.map (fun err -> err.Description) |> String.concat "\n" )
 }
 
 
 let hasEmailHandler email = 
-    fun (next : HttpFunc) (ctx : HttpContext) -> task {
-        let userService = ctx.GetService<UserManager<LsharpUser>>()
-        match! userService.FindByEmailAsync(email) with
-        | null -> return! text "false" next ctx
-        | _ -> return! text "true" next ctx
-    }
+    fun (next : HttpFunc) (ctx : HttpContext) -> 
+        ctx.GetService<UserManager<LsharpUser>>()
+        |> hasEmail email
+        |> actionResultTaskToResponse next ctx
+
 
 let registrationHandler = 
     fun (next : HttpFunc) (ctx : HttpContext) -> task {
         let userService = ctx.GetService<UserManager<LsharpUser>>()
         let! data = ctx.BindModelAsync<UserDTO>()
-        let! result = userService.CreateAsync(LsharpUser(data.Email), data.Password)
-        
-        match result with
-        | r when not r.Succeeded -> return! RequestErrors.BAD_REQUEST r.Errors next ctx
-        | _ -> 
-                let! user = userService.FindByEmailAsync(data.Email)
-                match! userService.AddToRoleAsync(user, "User") with
-                | r when not r.Succeeded -> return! RequestErrors.BAD_REQUEST r.Errors next ctx
-                | _ -> return! Successful.NO_CONTENT next ctx
+        return! userService 
+        |> createUser data.Email data.Password
+        |> ActionResult.bindTask (fun user -> addRole user "user" userService)
+        |> actionResultTaskToResponse next ctx
     }
     
-
 
 let loginHandler = 
     fun (next : HttpFunc) (ctx : HttpContext) -> task {
         let userService = ctx.GetService<UserManager<LsharpUser>>()
         let! data = ctx.BindJsonAsync<UserDTO>()
-        let! user = userService.FindByEmailAsync(data.Email)
-        let! isValid = userService.CheckPasswordAsync(user, data.Password)
-        if isValid then
-            match! signIn user userService with
-            | Ok tokens -> return! json tokens next ctx
-            | Error errors -> return! RequestErrors.BAD_REQUEST errors next ctx
-        else
-            return! RequestErrors.BAD_REQUEST "Invalid username or password" next ctx
+        return! userService 
+        |> checkPassword data.Email data.Password
+        |> ActionResult.bindTask (fun u -> signIn userService u)
+        |> actionResultTaskToResponse next ctx
     }
 
 let refreshHandler = 
     fun (next : HttpFunc) (ctx : HttpContext) -> task {
         let userService = ctx.GetService<UserManager<LsharpUser>>()
         let! data = ctx.BindJsonAsync<TokenDTO>()
-        let! user = userService.Users.FirstOrDefaultAsync(fun u -> u.RefreshToken = data.RefreshToken)
-        match user with
-        | null -> return! RequestErrors.BAD_REQUEST "Invalid token" next ctx
-        | _ -> 
-            match! signIn user userService with
-            | Ok tokens -> return! json tokens next ctx
-            | Error errors -> return! RequestErrors.BAD_REQUEST errors next ctx
+        return! userService
+        |> findByRefreshToken data.RefreshToken
+        |> ActionResult.bindTask (fun u -> signIn userService u)
+        |> actionResultTaskToResponse next ctx
     }
 
 

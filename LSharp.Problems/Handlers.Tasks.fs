@@ -15,7 +15,6 @@ open LSharp.Helpers.ActionResults
 open System.Threading.Tasks
 
 
-
 let getQueryValue str (ctx: HttpContext) = 
     ctx.TryGetQueryStringValue(str)
 

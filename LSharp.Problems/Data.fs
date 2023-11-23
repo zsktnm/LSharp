@@ -239,7 +239,7 @@ let solve userId taskId code =
         |> insertOneAsync (createSolution ())
 
     let updateCode (solution: Solution) code = 
-
+    // TODO: refactor
         let last = 
             solution.solutions 
             |> Array.last
@@ -340,6 +340,7 @@ let getSolutionsByUser userId =
     |> toListAsync
 
 
+    // TODO: refactor
 let commentSolution userId solutionId text = 
     let postComment userId (solution: Solution) text = 
         solutions
@@ -367,6 +368,7 @@ let commentSolution userId solutionId text =
     }
 
 let deleteComment userId solution (comment: SolutionComment) =
+    // TODO: refactor
 
     let remove userId solution comment = 
         solutions
