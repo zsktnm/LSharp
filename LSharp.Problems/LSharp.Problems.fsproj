@@ -19,11 +19,13 @@
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.0" />
     <PackageReference Include="Giraffe" Version="6.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.23" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.7.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LSharp.Helpers\LSharp.Helpers.fsproj" />
     <ProjectReference Include="..\LSharp.Mongodb\LSharp.Mongodb.fsproj" />
+    <ProjectReference Include="..\LSharp.Rabbit\LSharp.Rabbit.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

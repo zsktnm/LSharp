@@ -7,6 +7,18 @@ open MongoDB.Bson
 open Microsoft.AspNetCore.Http
 
 
+type TaskResult = {
+    TaskId: string;
+    UserId: string;
+    IsValid: bool;
+}
+
+type ExpGain = {
+    UserId: string;
+    Exp: int;
+}
+
+
 let listOfErrors (errors: Results.ValidationResult) = 
     errors.Errors 
     |> Seq.map (fun err -> err.ErrorMessage)
@@ -30,6 +42,7 @@ type CategoryDTO = {
     name: string;
     level: int;
 }
+
 
 
 let toCategory (dto: CategoryDTO) = {

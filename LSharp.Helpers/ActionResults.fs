@@ -8,6 +8,14 @@ type ActionResult<'a, 'b> =
 
 
 module ActionResult = 
+    let matchErrors =
+        function
+        | NotFound msg -> NotFound msg
+        | BadRequest msg -> BadRequest msg
+        | InternalError msg -> InternalError msg
+        | Success _ -> failwith "matching Success as error"
+        
+
     let fromOption errorMessage option = 
         match option with
         | None -> NotFound errorMessage

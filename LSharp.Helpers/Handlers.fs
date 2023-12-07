@@ -21,6 +21,7 @@ module Req =
     let internalError = ServerErrors.INTERNAL_ERROR
     let ok = Successful.OK
     let noContent = Successful.NO_CONTENT
+    let forbidden = RequestErrors.FORBIDDEN
 
 let authorize<'a> = 
     requiresAuthentication (challenge JwtBearerDefaults.AuthenticationScheme)

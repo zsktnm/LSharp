@@ -110,3 +110,19 @@ let deleteCommentHandler =
             return! deleteComment userId data.solution data.comment
             |> responseFromResult next ctx
     }
+
+
+let publishSolutuonHandler = 
+    fun (next: HttpFunc) (ctx: HttpContext) ->
+        ctx.TryGetQueryStringValue("id")
+        |> ActionResult.fromOption "invalid id"
+        |> Task.FromResult
+        |> ActionResult.bindTask getSolutionById
+        |> ActionResult.bindTask (function
+            | solution when solution.user <> getUserId ctx -> 
+                BadRequest "Invalid Id" |> Task.FromResult
+            | solution -> 
+                publish (solution._id.ToString())
+        )
+        |> actionResultTaskToResponse next ctx
+       

@@ -216,6 +216,43 @@ let getSolution userId taskId =
     |> ActionResult.fromOptionTask "Not found"
 
 
+let gotExp solutionId = 
+    solutions
+    |> updateByIdAsync solutionId {| ``$set`` = {| getExp = true; |} |}
+    |> updateToActionTask
+
+
+let publish solutionId = 
+    solutions
+    |> updateByIdAsync solutionId {| ``$set`` = {| published = true; |} |}
+    |> updateToActionTask
+
+
+
+let acceptValid userId taskId = task {
+    match! getSolution userId taskId with
+    | Success solution -> 
+        return! solutions 
+        |> updateOneAsync 
+            {| 
+                _id = oid (solution._id.ToString()); 
+                solutions = {| 
+                    ``$elemMatch`` = {|
+                        datetime = (solution.solutions |> Array.last |> fun s -> s.datetime)
+                        code = (solution.solutions |> Array.last |> fun s -> s.code)
+                    |}
+                |} 
+            |}  
+            {| 
+                ``$set`` = 
+                {|
+                    ``solutions.$.isValid`` = true
+                |}
+            |}
+        |> ActionResult.fromResultTask InternalError
+    | err -> return ActionResult.matchErrors err
+}
+
 let solve userId taskId code = 
     let createSolution () = {
         _id = ObjectId.GenerateNewId();

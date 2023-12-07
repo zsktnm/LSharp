@@ -115,3 +115,16 @@ let declareFanoutExchange name (channel: IModel) =
 
 let declareDirectExchange name (channel: IModel) = 
     channel.ExchangeDeclare(name, ExchangeType.Direct)
+
+let createEventConsumer (channel: IModel) = 
+    (EventingBasicConsumer(channel), channel)
+
+let listen (listener: BasicDeliverEventArgs -> unit) (consumer: EventingBasicConsumer) (channel) =
+    consumer.Received.AddHandler(new EventHandler<BasicDeliverEventArgs>(fun _ (e: BasicDeliverEventArgs) -> 
+        listener e
+    ))
+    consumer, channel
+
+let startConsume queue (consumer: EventingBasicConsumer) (channel: IModel) = 
+    channel.BasicConsume(queue, false, consumer)
+

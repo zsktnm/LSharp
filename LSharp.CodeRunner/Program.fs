@@ -64,14 +64,11 @@ let postMessage (result: TaskResult) =
     channel
     |> bindQueue queueName exchangeName routeName
 
-
     toJsonBytes result
     |> startPublish
     |> withExchange exchangeName
     |> withRouting routeName
     |> executePublish channel
-
-
 
 let checkCode code (lTask: LsharpTask) next ctx = task {
     match! (executeTests code lTask.test) with

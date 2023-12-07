@@ -35,7 +35,6 @@ module Mongo =
         JsonSerializer.Serialize(filter) 
         |> FilterDefinition.op_Implicit
 
-
     let serializeUpdate update : UpdateDefinition<'a> = 
         JsonSerializer.Serialize(update) 
         |> UpdateDefinition<'a>.op_Implicit
