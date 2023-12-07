@@ -3,6 +3,7 @@
 open LSharp.Mongodb.Mongo
 open LSharp.Mongodb.BuildHelpers
 open LSharp.Helpers.ActionResults
+open LSharp.Users.LevelUp
 
 module Data = 
     let [<Literal>] connectionString = "mongodb://localhost:27017"
@@ -18,6 +19,19 @@ module Data =
         exp: int;
         next: int;
         level: int
+    }
+
+    let updateToAction result =
+        match result with
+        | Sucessful x ->  Success x
+        | ClientError err ->  BadRequest err
+        | ServerError err ->  InternalError err
+
+    let updateToActionTask result = task {
+        match! result with
+        | Sucessful x -> return Success x
+        | ClientError err -> return BadRequest err
+        | ServerError err -> return InternalError err
     }
 
 
@@ -69,4 +83,19 @@ module Data =
             |> ActionResult.fromResultTask InternalError
     }
 
+    let addExpToUser id exp =
+        findUserByIdAsync id
+        |> ActionResult.bindTask (fun user -> 
+            usersCollection
+            |> updateOneAsync 
+                {| _id = user._id |}
+                {| 
+                    ``$set`` = {|
+                        exp = user.exp + exp;
+                        level = getLevel (user.exp + exp);
+                        next = getNextExp (user.exp + exp);
+                    |}
+                |}
+            |> ActionResult.fromResultTask BadRequest
+        )
 

@@ -40,7 +40,7 @@ module LevelUp =
 
     let getNextExp exp = 
         aggrLevels
-        |> Seq.skipWhile (fun (levelExp, level) -> levelExp < exp)
+        |> Seq.skipWhile (fun (levelExp, level) -> levelExp <= exp)
         |> Seq.tryHead
         |> function 
             | None -> -1
