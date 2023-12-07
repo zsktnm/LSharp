@@ -7,6 +7,8 @@ open MongoDB.Bson
 open Microsoft.AspNetCore.Http
 
 
+// ===== queue serialization
+
 type TaskResult = {
     TaskId: string;
     UserId: string;
@@ -18,7 +20,10 @@ type ExpGain = {
     Exp: int;
 }
 
+// ===== request/response serialization
 
+
+// read and check dto
 let listOfErrors (errors: Results.ValidationResult) = 
     errors.Errors 
     |> Seq.map (fun err -> err.ErrorMessage)
@@ -36,6 +41,8 @@ let readDto<'a> (ctx: HttpContext) = task {
         return Ok entity
 }
 
+
+// category
 
 [<CLIMutable>]
 type CategoryDTO = {
@@ -66,6 +73,8 @@ type CategoryValidator() =
             .LessThan(100)
             |> ignore
 
+
+// task
 
 [<CLIMutable>]
 type TaskDTO = {
@@ -122,6 +131,7 @@ type TaskValidator() =
             |> ignore
 
 
+// solutions and comments
 
 [<CLIMutable>]
 type CodeDTO = {
@@ -142,7 +152,6 @@ type CodeValidator() =
             .NotEmpty()
             .MaximumLength(1_000_000)
             |> ignore
-
 
 [<CLIMutable>]
 type SolutionViewDTO = {
