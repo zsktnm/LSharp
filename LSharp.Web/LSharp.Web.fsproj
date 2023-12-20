@@ -9,12 +9,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Views.fs" />
+    <Compile Include="Requests.fs" />
+    <Compile Include="Layout.fs" />
+    <Compile Include="Index.fs" />
+    <Compile Include="Registration.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BuildWebCompiler2022" Version="1.14.10" />
+    <PackageReference Include="FluentValidation" Version="11.8.0" />
     <PackageReference Include="Giraffe" Version="6.2.0" />
   </ItemGroup>
 
@@ -25,6 +29,10 @@
   <ItemGroup>
     <None Include="compilerconfig.json" />
     <None Include="compilerconfig.json.defaults" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LSharp.Helpers\LSharp.Helpers.fsproj" />
   </ItemGroup>
 
 </Project>

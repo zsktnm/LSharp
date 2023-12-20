@@ -26,13 +26,13 @@ open LSharp.Helpers.ActionResults
 
 let hasEmail email (manager: UserManager<LsharpUser>) = task {
     match! manager.FindByEmailAsync(email) with
-    | null -> return NotFound "Not found"
+    | null -> return NotFound ["Пользователь не найден"]
     | _ -> return Success email
 }
 
 let findByEmail email (manager: UserManager<LsharpUser>) = task {
     match! manager.FindByEmailAsync(email) with
-    | null -> return NotFound "Not found"
+    | null -> return NotFound ["Неверное имя пользователя или пароль"]
     | user -> return Success user
 }
 
@@ -40,7 +40,7 @@ let createUser email password (manager: UserManager<LsharpUser>) = task {
     let! result = manager.CreateAsync(LsharpUser(email), password)
     match result with
     | r when not r.Succeeded -> 
-        return BadRequest (r.Errors |> Seq.map (fun err -> err.Description) |> String.concat "\n")
+        return BadRequest (r.Errors |> Seq.map (fun err -> err.Description) |> List.ofSeq)
     | _ -> return! findByEmail email manager
 }
 
@@ -48,14 +48,14 @@ let addRole user role (manager: UserManager<LsharpUser>) = task {
     let! result = manager.AddToRoleAsync(user, role)
     match result with
     | r when not r.Succeeded -> 
-        return BadRequest (r.Errors |> Seq.map (fun err -> err.Description) |> String.concat "\n")
+        return BadRequest (r.Errors |> Seq.map (fun err -> err.Description) |> List.ofSeq)
     | _ -> return Success "Success"
 }
 
 let checkPassword email password (manager: UserManager<LsharpUser>) = 
     let checkPasswordByUser user password (manager: UserManager<LsharpUser>) = task {
         match! manager.CheckPasswordAsync(user, password) with
-        | false -> return BadRequest "Invalid password"
+        | false -> return BadRequest ["Неверное имя пользователя или пароль"]
         | true -> return! findByEmail email manager
     }
     manager
@@ -66,6 +66,6 @@ let checkPassword email password (manager: UserManager<LsharpUser>) =
 
 let findByRefreshToken token (manager: UserManager<LsharpUser>) = task {
     match! manager.Users.FirstOrDefaultAsync(fun u -> u.RefreshToken = token) with
-    | null -> return NotFound "Invalid token"
+    | null -> return NotFound ["Недействительный токен"]
     | user -> return Success user
 }

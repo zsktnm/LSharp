@@ -20,21 +20,13 @@ open System.IdentityModel.Tokens.Jwt
 open LSharp.Helpers.Handlers
 open LSharp.Helpers.ActionResults
 open LSharp.Identity.Data
+open LSharp.Identity.DataTransfer
 
 let [<Literal>] exitCode = 0
 
 let rsaPublic = RSA.Create()
 let rsaPrivate = RSA.Create()
 
-type UserDTO = {
-    Email: string;
-    Password: string;
-}
-
-type TokenDTO = {
-    Token: string;
-    RefreshToken: string;
-}
 
 let getTokensOf (user: LsharpUser) (roles: string) = 
     let descriptor = SecurityTokenDescriptor()
@@ -58,7 +50,7 @@ let signIn (userService: UserManager<LsharpUser>) (user: LsharpUser) = task {
     let! roles = userService.GetRolesAsync(user) 
     match! userService.UpdateAsync(user) with
     | r when r.Succeeded -> return roles |> String.concat ";" |> getTokensOf user |> Success
-    | r -> return BadRequest (r.Errors |> Seq.map (fun err -> err.Description) |> String.concat "\n" )
+    | r -> return BadRequest (r.Errors |> Seq.map (fun err -> err.Description) |> List.ofSeq )
 }
 
 
