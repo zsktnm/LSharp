@@ -1,6 +1,7 @@
 ﻿module Lsharp.Requests
 
 open System
+open System.Threading
 open System.Threading.Tasks
 open System.Text.Json
 open System.Net
@@ -38,10 +39,9 @@ let httpPost (url: string) content = task {
     return! client.PostAsync(url, content) 
 }
 
-
-let private readResponse (response: HttpResponseMessage Task) (reader: HttpResponseMessage -> 'a Task) = task {
+let asString (response: HttpResponseMessage Task) = task {
     use! r = response
-    let! content = reader r
+    let! content = r.Content.ReadAsStringAsync()
     match r with
     | _ when r.IsSuccessStatusCode -> 
         return Success content
@@ -52,8 +52,19 @@ let private readResponse (response: HttpResponseMessage Task) (reader: HttpRespo
     | _ -> return BadRequest content
 }
 
-let asString response = 
-    readResponse response (fun r -> r.Content.ReadAsStringAsync())
-
-let asJson<'a> response = 
-    readResponse response (fun r -> r.Content.ReadFromJsonAsync<'a>())
+let asJson<'a, 'b> (response: HttpResponseMessage Task) = task {
+    use! r = response
+    match r with
+    | _ when r.IsSuccessStatusCode -> 
+        let! result = r.Content.ReadFromJsonAsync<'a>()
+        return Success result
+    | _ when r.StatusCode |> int |> inRange (500, 599) -> 
+        let! result = r.Content.ReadFromJsonAsync<'b>()
+        return InternalError result
+    | _ when r.StatusCode = HttpStatusCode.NotFound -> 
+        let! result = r.Content.ReadFromJsonAsync<'b>()
+        return InternalError result
+    | _ -> 
+        let! result = r.Content.ReadFromJsonAsync<'b>()
+        return InternalError result
+}

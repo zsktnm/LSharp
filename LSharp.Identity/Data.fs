@@ -49,7 +49,7 @@ let addRole user role (manager: UserManager<LsharpUser>) = task {
     match result with
     | r when not r.Succeeded -> 
         return BadRequest (r.Errors |> Seq.map (fun err -> err.Description) |> List.ofSeq)
-    | _ -> return Success "Success"
+    | _ -> return Success ["Success"]
 }
 
 let checkPassword email password (manager: UserManager<LsharpUser>) = 

@@ -9,6 +9,7 @@
     <Compile Include="Layout.fs" />
     <Compile Include="Index.fs" />
     <Compile Include="Registration.fs" />
+    <Compile Include="Login.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

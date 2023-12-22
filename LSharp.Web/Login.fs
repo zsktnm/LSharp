@@ -1,29 +1,33 @@
-﻿module Lsharp.Registration
+﻿module Lsharp.Login
 
 open Giraffe.ViewEngine
 open Layout
 
 
 [<CLIMutable>]
-type RegistrationViewModel = {
+type LoginViewModel = {
     Email: string;
     Password: string;
-    RepeatPassword: string;
     Errors: string list;
+}
+
+[<CLIMutable>]
+type TokenDTO = {
+    Token: string;
+    RefreshToken: string;
 }
  
 let newViewModel () = {
     Email = ""
     Password = ""
-    RepeatPassword = ""
     Errors = []
 }
 
-let Registration (viewModel: RegistrationViewModel) = 
+let Login (viewModel: LoginViewModel) = 
     let markup = 
         div [ _class "content-wrapper" ] [
             form [ _class "vertical-stack max-600 box-shadow p-1"; _method "POST" ] [
-                h1 [ _class "title" ] [ str "Регистрация" ]
+                h1 [ _class "title" ] [ str "Вход в систему" ]
                 label [ _class "label" ] [ str "Email: " ]
                 input [ 
                     _class "input" 
@@ -36,25 +40,16 @@ let Registration (viewModel: RegistrationViewModel) =
                 input [ 
                     _class "input"
                     _type "password"
-                    _placeholder "Укажите надежный пароль"
+                    _placeholder "Введите пароль"
                     _name "Password" 
                     _value viewModel.Password
-                    _required
-                ]
-                label [ _class "label" ] [ str "Повторите пароль: " ]
-                input [ 
-                    _class "input" 
-                    _type "password" 
-                    _placeholder "Повторите свой надежный пароль" 
-                    _name "RepeatPassword" 
-                    _value viewModel.RepeatPassword
                     _required
                 ]
 
                 ul [ _class "validation-errors" ] (viewModel.Errors 
                     |> List.map (fun err -> li [] [str err]))
 
-                button [ _class "button primary-color" ] [ str "Зарегистрироваться" ]
+                button [ _class "button primary-color" ] [ str "Вход в систему" ]
 
             ]
         ]

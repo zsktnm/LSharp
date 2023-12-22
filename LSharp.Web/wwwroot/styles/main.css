@@ -107,12 +107,22 @@ main {
     flex-grow: 1;
 }
 
+.max-600 {
+    max-width: 600px;
+    flex-grow: 1;
+}
+
+.p-1 {
+    padding: 1em;
+}
+
 .full-size {
     flex-grow: 1;
 }
 
 .title {
     margin-bottom: 1em;
+    align-self: center;
 }
 
 .text-block {
@@ -130,4 +140,10 @@ main {
     border-radius: 7px;
     border: 1px solid black;
     margin-bottom: 1em;
+}
+
+.validation-errors {
+    list-style: none;
+    color: red;
+    margin-bottom: 0.5em;
 }
