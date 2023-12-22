@@ -6,26 +6,21 @@ open Giraffe.ViewEngine
 
 let Layout content = 
     let headSection () = head[] [
-        link [ _rel "stylesheet"; _href "/libs/bulma/css/bulma.css" ]
         link [ _rel "stylesheet"; _href "/styles/main.css" ]
     ]
 
     let brand () = div [ _class "navbar-brand" ] [
-        a [ _class "navbar-item"; _href "/" ] [
-            img [ _src "/img/logo.png" ]
+        a [ _href "/" ] [
+            img [ _src "/images/lsharp_logo.png" ]
         ]
     ]
 
-    let buttons () = div [_class "navbar-end"] [
-        div [ _class "navbar-item" ] [
-            div [ _class "buttons" ] [
-                a [ _class "button is-primary"; _href "/registration" ] [
-                    str "Регистрация"
-                ]
-                a [ _class "button is-light"; _href "/login" ] [
-                    str "Вход в систему"
-                ]
-            ]
+    let buttons () = div [_class "navbar-buttons"] [
+        a [ _class "button primary-color"; _href "/login" ] [
+            str "Вход в систему"
+        ]
+        a [ _class "button primary-outlined"; _href "/registration" ] [
+            str "Регистрация"
         ]
     ]
         
@@ -33,13 +28,15 @@ let Layout content =
     html [] [
         headSection ()
         body[] [
-            header [ _class "box" ] [
+            header [ _class "box-shadow" ] [
                 nav [_class "navbar"] [
                     brand ()
                     buttons()
                 ]
             ]
-            content
+            main [] [
+                content
+            ]
             
         ]
     ]
