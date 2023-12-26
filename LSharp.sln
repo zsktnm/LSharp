@@ -19,7 +19,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LSharp.CodeRunner", "LSharp
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LSharp.Rabbit", "LSharp.Rabbit\LSharp.Rabbit.fsproj", "{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LSharp.Web", "LSharp.Web\LSharp.Web.fsproj", "{89704143-7FA1-4642-8CAA-9D663039C5C7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSharp.Client", "LSharp.Client\LSharp.Client.csproj", "{414F198E-C79D-4D56-96CA-3CA605AFC6A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,10 +59,10 @@ Global
 		{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{89704143-7FA1-4642-8CAA-9D663039C5C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{89704143-7FA1-4642-8CAA-9D663039C5C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{89704143-7FA1-4642-8CAA-9D663039C5C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{89704143-7FA1-4642-8CAA-9D663039C5C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{414F198E-C79D-4D56-96CA-3CA605AFC6A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{414F198E-C79D-4D56-96CA-3CA605AFC6A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{414F198E-C79D-4D56-96CA-3CA605AFC6A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{414F198E-C79D-4D56-96CA-3CA605AFC6A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

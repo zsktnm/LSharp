@@ -1,0 +1,54 @@
+﻿@page "/registration"
+@inject IRegistrationService RegistrationService
+
+<PageTitle>Регистрация</PageTitle>
+
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+
+<MudForm @ref="form" @onsubmit="sendFormAsync" @bind-IsValid="isValid">
+    <MudCard>
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h4">Регистрация</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTextField Label="Email" Class="mt-3"
+                          @bind-Value="model.Email" For="@(() => model.Email)" />
+            <MudTextField Label="Пароль" HelperText="Укажите надежный пароль" Class="mt-3"
+                          @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+            <MudTextField Label="Пароль" HelperText="Повторите пароль" Class="mt-3"
+                          @bind-Value="model.RepeatPassword" For="@(() => model.RepeatPassword)" InputType="InputType.Password" />
+        </MudCardContent>
+        @foreach (string err in errors)
+        {
+            <MudText Color="@Color.Error">@err</MudText>
+        }
+        <MudCardActions>
+            <MudButton ButtonType="ButtonType.Submit" Disabled="!isValid" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Зарегистрироваться</MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudForm>
+
+
+@code {
+    RegisterAccountViewModel model = new();
+    MudForm form = new();
+    string[] errors = [];
+    bool isValid = false;
+
+
+    private async Task sendFormAsync(EventArgs e)
+    {
+        var result = await RegistrationService.RegistrationAsync(model);
+        if (result.IsValid)
+        {
+            Console.WriteLine("valid registration");
+        }
+        else
+        {
+            errors = result.Errors.ToArray();
+        }
+    }
+}

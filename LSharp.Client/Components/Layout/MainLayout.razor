@@ -1,0 +1,42 @@
+﻿@inherits LayoutComponentBase
+
+
+<MudThemeProvider Theme="@theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <h1 class="ml-3">L-Sharp</h1>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Href="/registration" class="mr-5" Color="Color.Primary" >Регистрация</MudButton>
+        <MudButton Variant="Variant.Filled" Href="/login" Color="Color.Secondary">Вход в систему</MudButton>
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen">
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer class="mt-6" MaxWidth="MaxWidth.Large">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = false;
+    MudTheme theme = new MudTheme
+    {
+        Palette = new PaletteLight
+        {
+            Primary = "#462255",
+            AppbarBackground = "#FFFFFF",
+            AppbarText = "#000000",
+            Secondary = "#297373"
+        }
+    };
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}
