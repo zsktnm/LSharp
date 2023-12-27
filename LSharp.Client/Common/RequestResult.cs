@@ -8,7 +8,7 @@
 
         private bool hasAccess = true;
 
-        public bool HasAcceess => hasAccess;
+        public bool HasAccess => hasAccess;
 
         private RequestResult() { }
 
@@ -55,7 +55,7 @@
 
         private bool hasAccess = true;
 
-        public bool HasAcceess => hasAccess;
+        public bool HasAccess => hasAccess;
 
         private T? value = default;
 

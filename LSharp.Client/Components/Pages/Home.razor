@@ -5,16 +5,9 @@
 
 <MudText Typo="Typo.h3" class="mt-8 mb-6">Добро пожаловать!</MudText>
 
-<MudText Typo="Typo.body1">Ура!</MudText>
+<MudText Typo="Typo.body1">Мяу мяу мяу</MudText>
 
-<button @onclick="changeAuth">Cheat</button>
 
 @code {
-    [CascadingParameter]
-    LSharp.Client.Components.Layout.MainLayout Parent { get; set; }
 
-    private void changeAuth(MouseEventArgs e)
-    {
-        Parent.SwitchAuth();
-    }
 }

@@ -41,7 +41,11 @@ namespace LSharp.Client.Services.Token
             return result.Success;
         }
 
-
+        public async Task Logout()
+        {
+            await storage.DeleteAsync(tokenKey);
+            await storage.DeleteAsync(refreshTokenKey);
+        }
 
     }
 }

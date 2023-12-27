@@ -8,5 +8,6 @@ namespace LSharp.Client.Services.Token
         Task<bool> HasToken();
         Task SetRefreshToken(string token);
         Task SetToken(string token);
+        Task Logout();
     }
 }

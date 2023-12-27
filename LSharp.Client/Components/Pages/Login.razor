@@ -3,6 +3,7 @@
 
 @inject ILoginService LoginService
 @inject ITokenService TokenService
+@inject NavigationManager Navigator
 
 <PageTitle>Вход в систему</PageTitle>
 
@@ -57,6 +58,7 @@
             await TokenService.SetToken(result.Value!.Token);
             await TokenService.SetRefreshToken(result.Value!.RefreshToken);
             IsAuthenticated = true;
+            Navigator.NavigateTo("/");
         }
         else
         {

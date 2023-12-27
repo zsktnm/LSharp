@@ -13,18 +13,20 @@
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         }
         <h1 class="ml-3">L-Sharp</h1>
-        <MudSpacer />
-        <MudButton Variant="Variant.Filled" Href="/registration" class="mr-5" Color="Color.Primary" >Регистрация</MudButton>
-        <MudButton Variant="Variant.Filled" Href="/login" Color="Color.Secondary">Вход в систему</MudButton>
+        @if (!IsAuthenticated)
+        {
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Href="/registration" class="mr-5" Color="Color.Primary" >Регистрация</MudButton>
+            <MudButton Variant="Variant.Filled" Href="/login" Color="Color.Secondary">Вход в систему</MudButton>
+        }
+
     </MudAppBar>
     <MudDrawer @bind-Open="@drawerOpen">
         <NavMenu />
     </MudDrawer>
     <MudMainContent>
         <MudContainer class="mt-6" MaxWidth="MaxWidth.Large">
-            <CascadingValue Value="this">
-                @Body
-            </CascadingValue>
+            @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
@@ -48,15 +50,13 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         IsAuthenticated = await TokenService.HasToken();
+        if (!IsAuthenticated)
+        {
+            drawerOpen = false;
+        }
         StateHasChanged();
     }
 
-    public void SwitchAuth()
-    {
-        IsAuthenticated = !IsAuthenticated;
-        Console.WriteLine("SWITCH");
-        StateHasChanged();
-    }
 
     void DrawerToggle()
     {

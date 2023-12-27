@@ -40,7 +40,7 @@ type ExpGain = {
 }
 
 
-let helloHandler = 
+let userInfoHandler = 
     fun (next: HttpFunc) (ctx: HttpContext) ->
         ctx 
         |> getUserId 
@@ -114,7 +114,7 @@ let addExpHandler =
 
 
 let webApp = choose [
-    route "/getname" >=> GET >=> authorize >=> helloHandler
+    route "/getinfo" >=> GET >=> authorize >=> userInfoHandler
     route "/setname" >=> GET >=> authorize >=> replaceUserNameHandler
     route "/getlevel" >=> GET >=> authorize >=> getLevelHandler
     route "/setphoto" >=> POST >=> authorize >=> setPhotoHandler

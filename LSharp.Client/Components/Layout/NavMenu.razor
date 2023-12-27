@@ -1,16 +1,58 @@
-﻿
+﻿@inject ITokenService TokenService
+@inject ILoginService LoginService
+@inject IDialogService DialogService
+@inject NavigationManager Navigaror
+@inject UserService UserService
 
 <MudNavMenu>
-    <MudText Typo="Typo.h6" Class="px-4">Иван Иванов</MudText>
-    <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">14 уровень</MudText>
+    <MudText Typo="Typo.h6" Class="px-4">@name</MudText>
+    <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">@level</MudText>
     <MudDivider Class="my-2" />
-    <MudNavLink Href="/dashboard">Профиль</MudNavLink>
+    <MudNavLink IconColor="Color.Primary" Icon="@Icons.Material.Filled.Code" Href="/dashboard">Задачи</MudNavLink>
+    <MudNavLink IconColor="Color.Secondary" Icon="@Icons.Material.Filled.Task" Href="/servers">Мои решения</MudNavLink>
+    <MudNavLink Icon="@Icons.Material.Filled.Help" Href="/about">Руководство по использованию</MudNavLink>
     <MudDivider Class="my-2" />
-    <MudNavLink Href="/dashboard">Задачи</MudNavLink>
-    <MudNavLink Href="/servers">Мои решения</MudNavLink>
-    <MudNavLink Href="/about">Общая информация</MudNavLink>
+    <MudNavLink IconColor="Color.Info" Icon="@Icons.Material.Filled.ManageAccounts" Href="/dashboard">Информация о пользователе</MudNavLink>
+    <MudNavLink IconColor="Color.Error" Icon="@Icons.Material.Filled.ExitToApp" OnClick="logoutAsync">Выход</MudNavLink>
 </MudNavMenu>
 
 @code {
+    string name = "Иван Иванов";
+    string level = "14 уровень";
 
+    async Task logoutAsync()
+    {
+        var result = await DialogService.ShowMessageBox("Выход из системы", "Вы уверены, что хотите выйти?", yesText: "Выйти", cancelText: "Отмена");
+        if (result == true)
+        {
+            await TokenService.Logout();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var token = await TokenService.GetToken();
+        if (token is null)
+        {
+            Navigaror.NavigateTo("/login");
+        }
+        var result = await UserService.GetUserInfoAsync(token);
+        if (!result.HasAccess)
+        {
+            // TODO: refresh token
+            await TokenService.Logout();
+            Navigaror.NavigateTo("/login");
+        }
+        else if (result.IsValid)
+        {
+            name = result.Value!.Name;
+            level = $"{result.Value!.Level} уровень";
+        }
+        else
+        {
+            name = "Иванов Иван";
+            level = "Сервис недоступен";
+        }
+        StateHasChanged();
+    }
 }
