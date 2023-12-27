@@ -1,4 +1,5 @@
 ﻿using LSharp.Client.Common;
+using LSharp.Client.DataTransfer;
 using System.ComponentModel.DataAnnotations;
 
 namespace LSharp.Client.ViewModels
@@ -7,7 +8,7 @@ namespace LSharp.Client.ViewModels
     {
         [Required]
         [EmailAddress(ErrorMessage = "Укажите действительный Email")]
-        public string Email { get; set; }
+        public string Email { get; set; } = null!;
 
         [Required]
         [StringLength(30, ErrorMessage = "Пароль должен сожержать не менее 8 символов", MinimumLength = 8)]
@@ -17,5 +18,13 @@ namespace LSharp.Client.ViewModels
         [Required]
         [Compare(nameof(Password))]
         public string RepeatPassword { get; set; } = null!;
+
+
+        public RegistrationDTO ToRegistrationDto() => 
+            new RegistrationDTO
+            {
+                Email = Email,
+                Password = Password,
+            };
     }
 }

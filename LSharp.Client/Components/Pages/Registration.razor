@@ -1,50 +1,60 @@
 ﻿@page "/registration"
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
 @inject IRegistrationService RegistrationService
+@inject ProtectedLocalStorage LocalStorage
+@inject NavigationManager Navigation
 
 <PageTitle>Регистрация</PageTitle>
+<MudContainer class="mt-6" MaxWidth="MaxWidth.Medium">
+    <MudForm @ref="form" @onsubmit="sendFormAsync" @bind-IsValid="isValid">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Align="Align.Center" Typo="Typo.h4">Регистрация</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTextField Label="Email" Class="mt-3"
+                              @bind-Value="model.Email" For="@(() => model.Email)" />
+                <MudTextField Label="Пароль" HelperText="Укажите надежный пароль" Class="mt-3"
+                              @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                <MudTextField Label="Пароль" HelperText="Повторите пароль" Class="mt-3"
+                              @bind-Value="model.RepeatPassword" For="@(() => model.RepeatPassword)" InputType="InputType.Password" />
+            </MudCardContent>
+            @foreach (string err in errors)
+            {
+                <MudText class="ml-4" Color="@Color.Error">@err</MudText>
+            }
 
-@using System.Text.RegularExpressions
-@using System.ComponentModel.DataAnnotations
-
-<MudForm @ref="form" @onsubmit="sendFormAsync" @bind-IsValid="isValid">
-    <MudCard>
-        <MudCardHeader>
-            <CardHeaderContent>
-                <MudText Typo="Typo.h4">Регистрация</MudText>
-            </CardHeaderContent>
-        </MudCardHeader>
-        <MudCardContent>
-            <MudTextField Label="Email" Class="mt-3"
-                          @bind-Value="model.Email" For="@(() => model.Email)" />
-            <MudTextField Label="Пароль" HelperText="Укажите надежный пароль" Class="mt-3"
-                          @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
-            <MudTextField Label="Пароль" HelperText="Повторите пароль" Class="mt-3"
-                          @bind-Value="model.RepeatPassword" For="@(() => model.RepeatPassword)" InputType="InputType.Password" />
-        </MudCardContent>
-        @foreach (string err in errors)
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Disabled="!isValid || isLoading" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto mt-2 mb-2 mr-2">Зарегистрироваться</MudButton>
+            </MudCardActions>
+        </MudCard>
+        @if (isLoading)
         {
-            <MudText Color="@Color.Error">@err</MudText>
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
         }
-        <MudCardActions>
-            <MudButton ButtonType="ButtonType.Submit" Disabled="!isValid" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Зарегистрироваться</MudButton>
-        </MudCardActions>
-    </MudCard>
-</MudForm>
-
+    </MudForm>
+</MudContainer>
 
 @code {
     RegisterAccountViewModel model = new();
     MudForm form = new();
     string[] errors = [];
     bool isValid = false;
+    bool isLoading = false;
+
 
 
     private async Task sendFormAsync(EventArgs e)
     {
-        var result = await RegistrationService.RegistrationAsync(model);
+        isLoading = true;
+        var result = await RegistrationService.RegistrationAsync(model.ToRegistrationDto());
+        isLoading = false;
         if (result.IsValid)
         {
-            Console.WriteLine("valid registration");
+            Navigation.NavigateTo("/login");
         }
         else
         {

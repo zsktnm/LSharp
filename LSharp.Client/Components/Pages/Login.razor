@@ -1,0 +1,66 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+@inject ILoginService LoginService
+@inject ITokenService TokenService
+
+<PageTitle>Вход в систему</PageTitle>
+
+<MudContainer class="mt-6" MaxWidth="MaxWidth.Small">
+    <MudForm @ref="form" @onsubmit="sendFormAsync" @bind-IsValid="isValid">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Align="Align.Center" Typo="Typo.h4">Вход в систему</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTextField Label="Email" Class="mt-3"
+                              @bind-Value="model.Email" For="@(() => model.Email)" />
+                <MudTextField Label="Пароль" Class="mt-3"
+                              @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+            </MudCardContent>
+            @foreach (string err in errors)
+            {
+                <MudText class="ml-4" Color="@Color.Error">@err</MudText>
+            }
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Disabled="!isValid" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto mt-2 mb-2 mr-2">Вход в систему</MudButton>
+            </MudCardActions>
+        </MudCard>
+        @if (isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+        }
+    </MudForm>
+</MudContainer>
+
+@code {
+    MudForm form = new MudForm();
+    bool isValid = false;
+    bool isLoading = false;
+    LoginViewModel model = new LoginViewModel();
+    List<string> errors = [];
+
+    [CascadingParameter(Name = "IsAuthenticated")]
+    public bool IsAuthenticated { get; set; }
+
+    async Task sendFormAsync()
+    {
+        isLoading = true;
+        var result = await LoginService.GetTokensAsync(model.Email, model.Password);
+        isLoading = false;
+
+        if (result.IsValid)
+        {
+            errors = [];
+            await TokenService.SetToken(result.Value!.Token);
+            await TokenService.SetRefreshToken(result.Value!.RefreshToken);
+            IsAuthenticated = true;
+        }
+        else
+        {
+            errors = result.Errors;
+        }
+    }
+}

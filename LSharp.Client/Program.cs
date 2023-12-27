@@ -1,5 +1,6 @@
 using LSharp.Client.Components;
-using LSharp.Client.Services;
+using LSharp.Client.Services.Auth;
+using LSharp.Client.Services.Token;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddMudServices();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<IRegistrationService, RegistrationService>();
+builder.Services.AddTransient<ITokenService, TokenService>();
+builder.Services.AddTransient<ILoginService, LoginService>();
 
 var app = builder.Build();
 

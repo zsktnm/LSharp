@@ -19,7 +19,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LSharp.CodeRunner", "LSharp
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LSharp.Rabbit", "LSharp.Rabbit\LSharp.Rabbit.fsproj", "{2396BFA3-4F5B-4C2D-928C-CBB2FB59BB6A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSharp.Client", "LSharp.Client\LSharp.Client.csproj", "{414F198E-C79D-4D56-96CA-3CA605AFC6A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LSharp.Client", "LSharp.Client\LSharp.Client.csproj", "{414F198E-C79D-4D56-96CA-3CA605AFC6A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

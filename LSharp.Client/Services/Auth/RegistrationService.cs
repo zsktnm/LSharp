@@ -1,26 +1,28 @@
-﻿using LSharp.Client.ViewModels;
+﻿using LSharp.Client.Common;
+using LSharp.Client.DataTransfer;
+using LSharp.Client.ViewModels;
 
-namespace LSharp.Client.Services
+namespace LSharp.Client.Services.Auth
 {
-
-
-
     public class RegistrationService : IRegistrationService
     {
         private readonly HttpClient client;
+        private readonly string registrationUrl;
 
-        public RegistrationService(IHttpClientFactory factory)
+        public RegistrationService(IHttpClientFactory factory, IConfiguration configuration)
         {
             client = factory.CreateClient();
+            registrationUrl = configuration["Urls:Auth:Registration"] ??
+                throw new ApplicationException("Не задано значение Urls.Auth.Registration в appsettings.json");
         }
 
-        public async Task<RequestResult> RegistrationAsync(RegisterAccountViewModel data)
+        public async Task<RequestResult> RegistrationAsync(RegistrationDTO data)
         {
             var content = JsonContent.Create(data);
             HttpResponseMessage response;
             try
             {
-                response = await client.PostAsync("https://localhost:7177/registration", content);
+                response = await client.PostAsync(registrationUrl, content);
             }
             catch
             {
@@ -33,7 +35,7 @@ namespace LSharp.Client.Services
             else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
             {
                 var errors = await response.Content.ReadFromJsonAsync<List<string>>();
-                return RequestResult.FromErrors(errors);
+                return RequestResult.FromErrors(errors ?? ["При регистрации произошла ошибка. Проверьте правильность вводимых значений."]);
             }
             else
             {
