@@ -47,6 +47,26 @@ module Data =
         |> find {| _id = id |}
         |> oneAsync
         |> ActionResult.fromOptionTask "Id is not found"
+
+    let createAnonimous id = task {
+        match! findUserByIdAsync id with
+        | Success user -> 
+            return ActionResult.BadRequest ["Пользователь уже существует"]
+        | NotFound _ ->
+            let user = { 
+                    _id = id; 
+                    name = "Аноним"; 
+                    exp = 0; 
+                    next = LevelUp.levels.Head;
+                    avatar = "";
+                    level = 1;
+            }
+            do! usersCollection
+                |> insertOneAsync user
+            return ActionResult.Success user
+        | _ -> 
+            return ActionResult.InternalError [ "Не удалось обновить запись. Попробуйте позже." ]
+        }
     
 
     let updateUserNameAsync newName id = 

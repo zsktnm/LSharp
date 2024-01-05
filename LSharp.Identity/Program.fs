@@ -92,11 +92,22 @@ let refreshHandler =
         |> actionResultTaskToResponse next ctx
     }
 
+let changePasswordHandler =
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let id = getUserId ctx
+        let userService = ctx.GetService<UserManager<LsharpUser>>()
+        let! data = ctx.BindJsonAsync<ChangePasswordDTO>()
+        return! userService
+        |> changePassword data.OldPassword data.NewPassword id
+        |> actionResultTaskToResponse next ctx
+    }
+
 
 let webApp = choose [
     route "/registration" >=> POST >=> registrationHandler
     route "/login" >=> POST >=> loginHandler
     route "/refresh" >=> POST >=> refreshHandler
+    route "/changepassword" >=> POST >=> authorize >=> changePasswordHandler
     routef "/hasEmail/%s" hasEmailHandler
 ]
 

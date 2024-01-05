@@ -12,3 +12,7 @@ type TokenDTO = {
     RefreshToken: string;
 }
 
+type ChangePasswordDTO = {
+    OldPassword: string;
+    NewPassword: string;
+}

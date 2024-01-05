@@ -49,6 +49,13 @@
 
     private async Task sendFormAsync(EventArgs e)
     {
+        await form.Validate();
+
+        if (!form.IsValid)
+        {
+            return;
+        }
+
         isLoading = true;
         var result = await RegistrationService.RegistrationAsync(model.ToRegistrationDto());
         isLoading = false;

@@ -12,13 +12,15 @@
     <MudNavLink IconColor="Color.Secondary" Icon="@Icons.Material.Filled.Task" Href="/servers">Мои решения</MudNavLink>
     <MudNavLink Icon="@Icons.Material.Filled.Help" Href="/about">Руководство по использованию</MudNavLink>
     <MudDivider Class="my-2" />
-    <MudNavLink IconColor="Color.Info" Icon="@Icons.Material.Filled.ManageAccounts" Href="/dashboard">Информация о пользователе</MudNavLink>
+    <MudNavLink IconColor="Color.Info" Icon="@Icons.Material.Filled.ManageAccounts" Href="/userinfo">Информация о пользователе</MudNavLink>
     <MudNavLink IconColor="Color.Error" Icon="@Icons.Material.Filled.ExitToApp" OnClick="logoutAsync">Выход</MudNavLink>
 </MudNavMenu>
 
-@code {
-    string name = "Иван Иванов";
-    string level = "14 уровень";
+    @code {
+    string name = "Неизвестен";
+    string level = "-- уровень";
+
+    PeriodicTimer timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
 
     async Task logoutAsync()
     {
@@ -29,12 +31,12 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    async Task LoadUserData()
     {
         var token = await TokenService.GetToken();
         if (token is null)
         {
-            Navigaror.NavigateTo("/login");
+            return;
         }
         var result = await UserService.GetUserInfoAsync(token);
         if (!result.HasAccess)
@@ -50,9 +52,22 @@
         }
         else
         {
-            name = "Иванов Иван";
+            name = "Неизвестен";
             level = "Сервис недоступен";
         }
         StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadUserData();
+
+            while (await timer.WaitForNextTickAsync())
+            {
+                await LoadUserData();
+            }
+        }
     }
 }

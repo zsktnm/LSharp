@@ -1,4 +1,4 @@
-open System
+﻿open System
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.DependencyInjection
@@ -40,14 +40,35 @@ type ExpGain = {
 }
 
 
+let isValidSymbol symbol = 
+    Char.IsLetterOrDigit symbol || symbol = ' ' || symbol = '_'
+
+
+let checkUserName name = 
+    name
+    |> fun name -> 
+        String.length name < 36 && 
+        String.length (name.Trim()) > 0 &&
+        String.forall isValidSymbol name
+    |> function
+        | true -> Some name
+        | false -> None
+
+
 let userInfoHandler = 
-    fun (next: HttpFunc) (ctx: HttpContext) ->
-        ctx 
-        |> getUserId 
-        |> findUserByIdAsync
-        |> actionResultTaskToResponse next ctx
-        
-    
+    fun (next: HttpFunc) (ctx: HttpContext) -> task {
+        let! user =
+            ctx 
+            |> getUserId 
+            |> findUserByIdAsync
+        match user with
+        | Success user -> return! Req.ok user next ctx
+        | NotFound _ ->
+            return! createAnonimous (getUserId ctx)
+            |> actionResultTaskToResponse next ctx
+        | _ -> return! Req.badRequest "invalid id" next ctx
+    }
+
 
 let getLevelHandler = 
     fun (next: HttpFunc) (ctx: HttpContext) -> 
@@ -63,9 +84,9 @@ let replaceUserNameHandler =
         ctx.TryGetQueryStringValue "name"
 
     fun (next: HttpFunc) (ctx: HttpContext) -> task { 
-        match getName ctx with
+        match (getName ctx |> Option.bind checkUserName) with
         | None -> 
-            return! Req.badRequest "Invalid name" next ctx
+            return! Req.badRequest "Некорректное имя. Имя должно содержать цифры, буквы, пробелы или символ подчеркивания. Длина имени не должна превышать 36 символов" next ctx
         | Some name -> 
             return! ctx 
             |> getUserId 

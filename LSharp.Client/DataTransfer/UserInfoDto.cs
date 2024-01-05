@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using LSharp.Client.ViewModels;
+using System.Text.Json.Serialization;
 
 namespace LSharp.Client.DataTransfer
 {
@@ -11,6 +12,18 @@ namespace LSharp.Client.DataTransfer
         public int Exp { get; set; }
         public int Next { get; set; }
         public int Level { get; set; }
+
+        public UserInfoViewModel ToViewModel()
+        {
+            return new UserInfoViewModel
+            {
+                Id = Id,
+                Exp = Exp,
+                Level = Level,
+                Next = Next,
+                UserName = Name
+            };
+        }
     }
 
 }

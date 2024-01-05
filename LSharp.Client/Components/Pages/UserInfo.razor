@@ -1,0 +1,220 @@
+﻿@page "/userinfo"
+@using LSharp.Client.DataTransfer
+@inject UserService UserService
+@inject ITokenService TokenService
+@inject NavigationManager Navigator
+
+<PageTitle>Информация о пользователе</PageTitle>
+
+<MudContainer class="mt-6" MaxWidth="MaxWidth.Medium">
+
+    @if (state == State.Loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else if (state == State.Unavailable)
+    {
+        <MudAlert Severity="Severity.Error">Сервис недоступен, попробуйте позже</MudAlert>
+    }
+    else
+    {
+        if (showSuccessNameMessage)
+        {
+            <MudAlert Severity="Severity.Success" ShowCloseIcon="true" CloseIconClicked="CloseSuccessNameAlert">Имя успешно изменено</MudAlert>
+        }
+
+        if (showSuccessPasswordMessage)
+        {
+            <MudAlert Severity="Severity.Success" ShowCloseIcon="true" CloseIconClicked="CloseSuccessPasswordAlert">Пароль изменен</MudAlert>
+        }
+
+        <MudCard class="pa-4 mb-6">
+            <MudCardContent>
+                <MudText Typo="Typo.h4">@userInfo.UserName</MudText>
+                    <MudText Typo="Typo.subtitle1">Уровень @userInfo.Level</MudText>
+                    <MudText Typo="Typo.subtitle1">Опыт @userInfo.Exp/@userInfo.Next</MudText>
+                </MudCardContent>
+            </MudCard>
+
+        <MudCard class="pa-4 mb-6">
+            <MudForm @ref="setNameForm" @bind-IsValid="isNameValid">
+                <MudCardHeader>
+                    <MudText Typo="Typo.h4">Изменение имени</MudText>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField Label="Ваше имя:" @bind-Value="@userInfo.UserName" For="() => userInfo.UserName" />
+                </MudCardContent>
+                @foreach (string error in nameErrors)
+                {
+                    <MudText Color="Color.Error" class="ml-4">@error</MudText>
+                }
+                <MudCardActions>
+                    <MudButton Disabled="!isNameValid" OnClick="SetUsername" Variant="Variant.Text" Color="Color.Primary">
+                        Изменить
+                    </MudButton>
+                </MudCardActions>
+            </MudForm>
+        </MudCard>
+
+        <MudCard class="pa-4">
+            <MudForm @ref="setPasswordForm" @bind-IsValid="isPasswordValid">
+                <MudCardHeader>
+                    <MudText Typo="Typo.h4">Изменение пароля</MudText>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField InputType="InputType.Password" @bind-Value="passwordInfo.OldPassword"
+                                  For="() => passwordInfo.OldPassword" Label="Пароль" HelperText="Введите старый пароль" T="string" />
+                    <MudTextField InputType="InputType.Password" @bind-Value="passwordInfo.Password" 
+                        For="() => passwordInfo.Password" Label="Пароль" HelperText="Укажите новый пароль" T="string" />
+                    <MudTextField InputType="InputType.Password" @bind-Value="passwordInfo.RepeatPassword" 
+                        For="() => passwordInfo.RepeatPassword" Label="Пароль" HelperText="Повторите новый пароль" T="string" />
+                </MudCardContent>
+                @foreach (string error in passwordErrors)
+                {
+                    <MudText Color="Color.Error" class="ml-4">@error</MudText>
+                }
+                <MudCardActions>
+                    <MudButton OnClick="SetPassword" Variant="Variant.Text" Color="Color.Primary" Disabled="!isPasswordValid">
+                        Изменить
+                    </MudButton>
+                </MudCardActions>
+            </MudForm>
+        </MudCard>
+    }
+
+    
+
+</MudContainer>
+
+
+@code {
+    enum State { Loading, Unavailable, Success };
+    State state = State.Loading;
+
+    MudForm setNameForm = new();
+    MudForm setPasswordForm = new();
+
+    bool showSuccessNameMessage = false;
+    bool showSuccessPasswordMessage = false;
+    bool isNameValid = false;
+    bool isPasswordValid = false;
+
+    UserInfoViewModel userInfo = null!;
+    ChangePasswordViewModel passwordInfo = new();
+
+    List<string> nameErrors = new();
+    List<string> passwordErrors = new();
+
+    void CloseSuccessNameAlert()
+    {
+        showSuccessNameMessage = false;
+    }
+
+    void CloseSuccessPasswordAlert()
+    {
+        showSuccessPasswordMessage = false;
+    }
+
+    async Task SetPassword()
+    {
+        await setPasswordForm.Validate();
+        if (!setPasswordForm.IsValid)
+        {
+            return;
+        }
+
+        passwordErrors = [];
+        var token = await TokenService.GetToken();
+        if (token is null)
+        {
+            Navigator.NavigateTo("/login");
+            return;
+        }
+
+        state = State.Loading;
+        StateHasChanged();
+        var result = await UserService.ChangePassword(token, passwordInfo.ToDto());
+        state = State.Success;
+        if (!result.HasAccess)
+        {
+            // TODO: refresh token
+            await TokenService.Logout();
+        }
+        else if (result.IsValid)
+        {
+            showSuccessPasswordMessage = true;
+        }
+        else
+        {
+            passwordErrors = result.Errors;
+        }
+        StateHasChanged();
+
+    }
+
+    async Task SetUsername()
+    {
+        await setNameForm.Validate();
+        if (!setNameForm.IsValid)
+        {
+            return;
+        }
+
+        nameErrors = [];
+        var token = await TokenService.GetToken();
+        if (token is null)
+        {
+            Navigator.NavigateTo("/login");
+            return;
+        }
+        state = State.Loading;
+        StateHasChanged();
+        var result = await UserService.SetUserName(token, userInfo.UserName.Trim());
+        state = State.Success;
+        if (!result.HasAccess)
+        {
+            // TODO: refresh token
+            await TokenService.Logout();
+        }
+        else if (result.IsValid)
+        {
+            showSuccessNameMessage = true;
+        }
+        else
+        {
+            nameErrors = result.Errors;
+        }
+        StateHasChanged();
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await TokenService.GetToken();
+            if (token is null)
+            {
+                Navigator.NavigateTo("/login");
+                return;
+            }
+            var result = await UserService.GetUserInfoAsync(token);
+            if (!result.HasAccess)
+            {
+                // TODO: refresh token
+                await TokenService.Logout();
+                Navigator.NavigateTo("/login");
+            }
+            else if (result.IsValid)
+            {
+                userInfo = result.Value!.ToViewModel();
+                state = State.Success;
+            }
+            else
+            {
+                state = State.Unavailable;
+            }
+            StateHasChanged();
+        }
+    }
+}

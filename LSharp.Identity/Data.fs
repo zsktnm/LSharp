@@ -36,6 +36,19 @@ let findByEmail email (manager: UserManager<LsharpUser>) = task {
     | user -> return Success user
 }
 
+let changePassword oldPassword newPassword id (manager: UserManager<LsharpUser>) = task {
+    match! manager.FindByIdAsync(id) with
+    | null -> return NotFound ["Ошибка при обновлении пароля. Недействительный идентификатор "]
+    | user ->
+        match! manager.ChangePasswordAsync(user, oldPassword, newPassword) with
+        | result when result.Succeeded -> return Success "Success"
+        | result -> 
+            return result.Errors 
+            |> Seq.map (fun err -> err.Description)
+            |> List.ofSeq
+            |> BadRequest
+}
+
 let createUser email password (manager: UserManager<LsharpUser>) = task {
     let! result = manager.CreateAsync(LsharpUser(email), password)
     match result with
